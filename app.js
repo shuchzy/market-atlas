@@ -1,14 +1,34 @@
 "use strict";
 
 const ASSETS = [
-  { symbol: "BTCUSDT", code: "BTC", name: "Bitcoin", icon: "₿", color: "#f3ba2f", seed: 68000 },
-  { symbol: "ETHUSDT", code: "ETH", name: "Ethereum", icon: "Ξ", color: "#8797f5", seed: 3600 },
-  { symbol: "SOLUSDT", code: "SOL", name: "Solana", icon: "S", color: "#8e62ff", seed: 155 },
-  { symbol: "XRPUSDT", code: "XRP", name: "XRP", icon: "X", color: "#67d8d2", seed: 0.54 },
+  { symbol: "BTCUSDT", code: "BTC", name: "Bitcoin", icon: "₿", color: "#f3ba2f", seed: 64000 },
+  { symbol: "ETHUSDT", code: "ETH", name: "Ethereum", icon: "Ξ", color: "#8797f5", seed: 3400 },
+  { symbol: "SOLUSDT", code: "SOL", name: "Solana", icon: "S", color: "#8e62ff", seed: 145 },
+  { symbol: "XRPUSDT", code: "XRP", name: "XRP", icon: "X", color: "#67d8d2", seed: 0.55 },
   { symbol: "BNBUSDT", code: "BNB", name: "BNB", icon: "B", color: "#f3ba2f", seed: 610 },
   { symbol: "ADAUSDT", code: "ADA", name: "Cardano", icon: "A", color: "#4ca9eb", seed: 0.42 },
+  { symbol: "DOGEUSDT", code: "DOGE", name: "Dogecoin", icon: "D", color: "#d9bd55", seed: 0.14 },
+  { symbol: "AVAXUSDT", code: "AVAX", name: "Avalanche", icon: "V", color: "#e84142", seed: 36 },
   { symbol: "LINKUSDT", code: "LINK", name: "Chainlink", icon: "L", color: "#4f72e6", seed: 15.5 },
-  { symbol: "PAXGUSDT", code: "PAXG", name: "PAX Gold", icon: "Au", color: "#e6bd56", seed: 2350, isGold: true }
+  { symbol: "DOTUSDT", code: "DOT", name: "Polkadot", icon: "P", color: "#e6007a", seed: 6.2 },
+  { symbol: "LTCUSDT", code: "LTC", name: "Litecoin", icon: "Ł", color: "#b8b8b8", seed: 82 },
+  { symbol: "TRXUSDT", code: "TRX", name: "TRON", icon: "T", color: "#ef3340", seed: 0.12 },
+  { symbol: "TONUSDT", code: "TON", name: "Toncoin", icon: "T", color: "#37aee2", seed: 5.4 },
+  { symbol: "SUIUSDT", code: "SUI", name: "Sui", icon: "S", color: "#6fbcf0", seed: 1.1 },
+  { symbol: "NEARUSDT", code: "NEAR", name: "NEAR", icon: "N", color: "#79dec8", seed: 4.8 },
+  { symbol: "APTUSDT", code: "APT", name: "Aptos", icon: "A", color: "#86e2d5", seed: 7.2 },
+  { symbol: "ARBUSDT", code: "ARB", name: "Arbitrum", icon: "R", color: "#28a0f0", seed: 0.75 },
+  { symbol: "OPUSDT", code: "OP", name: "Optimism", icon: "O", color: "#ff0420", seed: 1.8 },
+  { symbol: "PEPEUSDT", code: "PEPE", name: "Pepe", icon: "P", color: "#68a84f", seed: 0.000012 },
+  { symbol: "SHIBUSDT", code: "SHIB", name: "Shiba Inu", icon: "S", color: "#f09438", seed: 0.000018 },
+  { symbol: "BCHUSDT", code: "BCH", name: "Bitcoin Cash", icon: "B", color: "#8dc351", seed: 430 },
+  { symbol: "UNIUSDT", code: "UNI", name: "Uniswap", icon: "U", color: "#ff4f9a", seed: 9.5 },
+  { symbol: "ATOMUSDT", code: "ATOM", name: "Cosmos", icon: "C", color: "#7b7be8", seed: 7.5 },
+  { symbol: "FILUSDT", code: "FIL", name: "Filecoin", icon: "F", color: "#0090ff", seed: 4.5 },
+  { symbol: "ICPUSDT", code: "ICP", name: "Internet Computer", icon: "I", color: "#ef7b5b", seed: 9.2 },
+  { symbol: "HBARUSDT", code: "HBAR", name: "Hedera", icon: "H", color: "#c9d1d0", seed: 0.09 },
+  { symbol: "AAVEUSDT", code: "AAVE", name: "Aave", icon: "A", color: "#8f67e8", seed: 105 },
+  { symbol: "PAXGUSDT", code: "PAXG", name: "PAX Gold", icon: "Au", color: "#e6bd56", seed: 4200, isGold: true }
 ];
 
 const state = {
@@ -16,6 +36,8 @@ const state = {
   interval: "4h",
   candles: [],
   analysis: null,
+  timeframeAnalyses: {},
+  tickers: {},
   layers: { fib: true, ob: true, fvg: true, ema: true },
   source: "live",
   hoverIndex: null
@@ -39,6 +61,7 @@ const refs = {
   launch: $("#launchAnalysis"),
   marketStatus: $("#marketStatus"),
   lastUpdate: $("#lastUpdate"),
+  assetCount: $("#assetCount"),
   dialog: $("#infoDialog")
 };
 
@@ -52,7 +75,7 @@ function average(values) {
 
 function formatPrice(value) {
   if (!Number.isFinite(value)) return "--";
-  const digits = value < 1 ? 4 : value < 100 ? 2 : value < 1000 ? 2 : 0;
+  const digits = value < 0.0001 ? 8 : value < 0.01 ? 6 : value < 1 ? 4 : value < 1000 ? 2 : 0;
   return `$${value.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
 }
 
@@ -103,8 +126,8 @@ function generateFallbackCandles(asset, interval, count = 300) {
   return candles;
 }
 
-async function fetchCandles() {
-  const endpoint = `https://api.binance.com/api/v3/klines?symbol=${state.asset.symbol}&interval=${state.interval}&limit=300`;
+async function fetchCandles(interval = state.interval, isPrimary = false) {
+  const endpoint = `https://api.binance.com/api/v3/klines?symbol=${state.asset.symbol}&interval=${interval}&limit=300`;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 7000);
   try {
@@ -112,7 +135,7 @@ async function fetchCandles() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const rows = await response.json();
     if (!Array.isArray(rows) || rows.length < 80) throw new Error("Insufficient data");
-    state.source = "live";
+    if (isPrimary) state.source = "live";
     return rows.map((row) => ({
       time: Number(row[0]),
       open: Number(row[1]),
@@ -122,10 +145,28 @@ async function fetchCandles() {
       volume: Number(row[5])
     }));
   } catch (error) {
-    state.source = "simulation";
-    return generateFallbackCandles(state.asset, state.interval);
+    if (isPrimary) state.source = "simulation";
+    return generateFallbackCandles(state.asset, interval);
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+async function fetchAssetTickers() {
+  try {
+    const response = await fetch("https://api.binance.com/api/v3/ticker/24hr");
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const rows = await response.json();
+    const allowed = new Set(ASSETS.map((asset) => asset.symbol));
+    state.tickers = Object.fromEntries(rows
+      .filter((row) => allowed.has(row.symbol))
+      .map((row) => [row.symbol, {
+        price: Number(row.lastPrice),
+        change: Number(row.priceChangePercent)
+      }]));
+    renderAssetList(refs.assetSearch.value);
+  } catch (error) {
+    state.tickers = {};
   }
 }
 
@@ -177,6 +218,67 @@ function calculateVWAP(candles) {
     cumulativeVolume += candle.volume;
     return cumulativePriceVolume / cumulativeVolume;
   });
+}
+
+function standardDeviation(values) {
+  const mean = average(values);
+  return Math.sqrt(average(values.map((value) => (value - mean) ** 2)));
+}
+
+function calculateBollinger(values, period = 20, multiplier = 2) {
+  const sample = values.slice(-period);
+  const middle = average(sample);
+  const deviation = standardDeviation(sample);
+  const upper = middle + deviation * multiplier;
+  const lower = middle - deviation * multiplier;
+  const position = (values.at(-1) - lower) / Math.max(upper - lower, 0.000001);
+  const width = (upper - lower) / Math.max(middle, 0.000001) * 100;
+  return { upper, middle, lower, position, width };
+}
+
+function calculateStochastic(candles, period = 14) {
+  const sample = candles.slice(-period);
+  const highest = Math.max(...sample.map((candle) => candle.high));
+  const lowest = Math.min(...sample.map((candle) => candle.low));
+  return (candles.at(-1).close - lowest) / Math.max(highest - lowest, 0.000001) * 100;
+}
+
+function calculateADX(candles, period = 14) {
+  const trueRanges = [];
+  const plusDM = [];
+  const minusDM = [];
+  for (let i = 1; i < candles.length; i += 1) {
+    const current = candles[i];
+    const previous = candles[i - 1];
+    const upMove = current.high - previous.high;
+    const downMove = previous.low - current.low;
+    trueRanges.push(Math.max(
+      current.high - current.low,
+      Math.abs(current.high - previous.close),
+      Math.abs(current.low - previous.close)
+    ));
+    plusDM.push(upMove > downMove && upMove > 0 ? upMove : 0);
+    minusDM.push(downMove > upMove && downMove > 0 ? downMove : 0);
+  }
+
+  if (trueRanges.length < period * 2) return { value: 0, plusDI: 0, minusDI: 0 };
+  let smoothedTR = trueRanges.slice(0, period).reduce((sum, value) => sum + value, 0);
+  let smoothedPlus = plusDM.slice(0, period).reduce((sum, value) => sum + value, 0);
+  let smoothedMinus = minusDM.slice(0, period).reduce((sum, value) => sum + value, 0);
+  const dxValues = [];
+  let plusDI = 0;
+  let minusDI = 0;
+
+  for (let i = period; i < trueRanges.length; i += 1) {
+    smoothedTR = smoothedTR - smoothedTR / period + trueRanges[i];
+    smoothedPlus = smoothedPlus - smoothedPlus / period + plusDM[i];
+    smoothedMinus = smoothedMinus - smoothedMinus / period + minusDM[i];
+    plusDI = 100 * smoothedPlus / Math.max(smoothedTR, 0.000001);
+    minusDI = 100 * smoothedMinus / Math.max(smoothedTR, 0.000001);
+    dxValues.push(100 * Math.abs(plusDI - minusDI) / Math.max(plusDI + minusDI, 0.000001));
+  }
+
+  return { value: average(dxValues.slice(-period)), plusDI, minusDI };
 }
 
 function findSwings(candles, window = 3) {
@@ -284,6 +386,21 @@ function inferWyckoff(candles, rangeLow, rangeHigh, ema20, ema50, volumeRatio) {
   return { phase: "מעבר", marker: 49, score: 0, text: "אין שלב Wyckoff חד־משמעי. השוק מציג מעבר בין איזון להתרחבות; נדרש אישור מבני נוסף." };
 }
 
+function calculateScenarioProbabilities(combined, trendScore, alignment, atrPercent) {
+  const confidence = clamp(Math.round(48 + alignment * 35 - (atrPercent > 5 ? 8 : 0)), 42, 88);
+  let bullish = 33 + combined * 35 + Math.max(0, trendScore) * 7;
+  let bearish = 33 - combined * 35 + Math.max(0, -trendScore) * 7;
+  let neutral = 34 + (1 - Math.abs(combined)) * 14 - alignment * 8;
+  bullish = Math.max(8, bullish);
+  bearish = Math.max(8, bearish);
+  neutral = Math.max(10, neutral);
+  const total = bullish + bearish + neutral;
+  bullish = Math.round(bullish / total * 100);
+  bearish = Math.round(bearish / total * 100);
+  neutral = 100 - bullish - bearish;
+  return { bullish, bearish, neutral, confidence };
+}
+
 function analyzeMarket(candles) {
   const closes = candles.map((c) => c.close);
   const ema20 = ema(closes, 20);
@@ -304,6 +421,9 @@ function analyzeMarket(candles) {
   const rangePosition = (closes.at(-1) - rangeLow) / (rangeHigh - rangeLow);
   const volumes = candles.slice(-21).map((c) => c.volume);
   const volumeRatio = volumes.at(-1) / Math.max(average(volumes.slice(0, -1)), 1);
+  const bollinger = calculateBollinger(closes);
+  const stochastic = calculateStochastic(candles);
+  const adx = calculateADX(candles);
   const swings = findSwings(candles);
   const recentHighs = swings.highs.slice(-2);
   const recentLows = swings.lows.slice(-2);
@@ -353,18 +473,10 @@ function analyzeMarket(candles) {
   );
   const combined = trendScore * 0.35 + ictScore * 0.25 + momentumScore * 0.2 + (locationScore + wyckoff.score * 0.45) * 0.2;
   const alignment = average([trendScore, momentumScore, ictScore, locationScore + wyckoff.score * 0.45].map(Math.abs));
-  const confidence = clamp(Math.round(48 + alignment * 35 - (atrPercent > 5 ? 8 : 0)), 42, 88);
-
-  let bullish = 33 + combined * 35 + Math.max(0, trendScore) * 7;
-  let bearish = 33 - combined * 35 + Math.max(0, -trendScore) * 7;
-  let neutral = 34 + (1 - Math.abs(combined)) * 14 - alignment * 8;
-  bullish = Math.max(8, bullish);
-  bearish = Math.max(8, bearish);
-  neutral = Math.max(10, neutral);
-  const total = bullish + bearish + neutral;
-  bullish = Math.round(bullish / total * 100);
-  bearish = Math.round(bearish / total * 100);
-  neutral = 100 - bullish - bearish;
+  const probabilities = calculateScenarioProbabilities(combined, trendScore, alignment, atrPercent);
+  const regime = adx.value >= 25
+    ? (trendScore >= 0 ? "מגמה עולה" : "מגמה יורדת")
+    : bollinger.width < 4 ? "כיווץ" : "טווח";
 
   const fibRatios = [0, 0.236, 0.382, 0.5, 0.618, 0.705, 0.786, 1];
   const fibLevels = fibRatios.map((ratio) => ({
@@ -377,23 +489,29 @@ function analyzeMarket(candles) {
   return {
     ema20, ema50, ema200, vwap, rsiValue, atrValue, atrPercent, volumeRatio,
     rangeHigh, rangeLow, rangePosition, structure, structureScore,
-    trendScore, momentumScore, ictScore, locationScore, combined, confidence,
-    bullish, bearish, neutral, orderBlocks, fvgs, sweep, wyckoff, fibLevels, nearestFib,
-    macdHistogram
+    trendScore, momentumScore, ictScore, locationScore, combined, alignment,
+    ...probabilities, orderBlocks, fvgs, sweep, wyckoff, fibLevels, nearestFib,
+    macdHistogram, bollinger, stochastic, adx, regime
   };
 }
 
 function renderAssetList(filter = "") {
   const query = filter.trim().toLowerCase();
+  const filteredAssets = ASSETS.filter((asset) => `${asset.name} ${asset.code}`.toLowerCase().includes(query));
   refs.assetList.innerHTML = "";
-  ASSETS.filter((asset) => `${asset.name} ${asset.code}`.toLowerCase().includes(query)).forEach((asset) => {
+  refs.assetCount.textContent = `${ASSETS.length} נכסים`;
+  filteredAssets.forEach((asset) => {
+    const ticker = state.tickers[asset.symbol];
+    const price = ticker ? formatPrice(ticker.price) : "--";
+    const changeClass = ticker?.change > 0 ? "up" : ticker?.change < 0 ? "down" : "";
+    const changeText = ticker ? `${ticker.change >= 0 ? "+" : ""}${ticker.change.toFixed(2)}%` : "לחץ לניתוח";
     const button = document.createElement("button");
     button.className = `asset-item ${asset.symbol === state.asset.symbol ? "active" : ""}`;
     button.style.setProperty("--asset-color", asset.color);
     button.innerHTML = `
       <span class="asset-logo">${asset.icon}</span>
       <span class="asset-name"><strong>${asset.name}</strong><span>${asset.code} / USDT</span></span>
-      <span class="asset-price"><strong data-price="${asset.symbol}">--</strong><small>לחץ לניתוח</small></span>
+      <span class="asset-price"><strong data-price="${asset.symbol}">${price}</strong><small class="${changeClass}">${changeText}</small></span>
     `;
     button.addEventListener("click", () => selectAsset(asset));
     refs.assetList.appendChild(button);
@@ -423,8 +541,29 @@ function setLoading(isLoading) {
 
 async function runAnalysis() {
   setLoading(true);
-  state.candles = await fetchCandles();
-  state.analysis = analyzeMarket(state.candles);
+  const intervals = ["15m", "1h", "4h", "1d"];
+  const candleSets = await Promise.all(intervals.map((interval) => fetchCandles(interval, interval === state.interval)));
+  state.timeframeAnalyses = Object.fromEntries(intervals.map((interval, index) => [
+    interval,
+    analyzeMarket(candleSets[index])
+  ]));
+  state.candles = candleSets[intervals.indexOf(state.interval)];
+  state.analysis = state.timeframeAnalyses[state.interval];
+
+  const weights = { "15m": 0.15, "1h": 0.25, "4h": 0.3, "1d": 0.3 };
+  const mtfScore = intervals.reduce((sum, interval) => sum + state.timeframeAnalyses[interval].combined * weights[interval], 0);
+  const blendedScore = state.analysis.combined * 0.7 + mtfScore * 0.3;
+  const mtfAlignment = average(intervals.map((interval) => Math.abs(state.timeframeAnalyses[interval].combined)));
+  Object.assign(
+    state.analysis,
+    calculateScenarioProbabilities(
+      blendedScore,
+      state.analysis.trendScore,
+      (state.analysis.alignment + mtfAlignment) / 2,
+      state.analysis.atrPercent
+    ),
+    { mtfScore, blendedScore }
+  );
   updateDashboard();
   setLoading(false);
 }
@@ -455,6 +594,7 @@ function updateDashboard() {
   updateOrderBlocks();
   updateFibonacci();
   updateWyckoff();
+  updateDecisionCenter();
   drawChart();
 }
 
@@ -482,7 +622,7 @@ function updateProbability() {
 
   const trend = a.trendScore > 0.2 ? "המגמה תומכת בעלייה" : a.trendScore < -0.2 ? "המגמה תומכת בירידה" : "המגמה אינה חד־משמעית";
   const location = a.rangePosition < 0.35 ? "והמחיר באזור Discount" : a.rangePosition > 0.7 ? "אך המחיר באזור Premium" : "והמחיר במרכז טווח המסחר";
-  $("#scenarioCallout").innerHTML = `<span>תזה מרכזית</span><p>${trend} ${location}. רמת Fibonacci הקרובה: ${(a.nearestFib.ratio * 100).toFixed(1)}%.</p>`;
+  $("#scenarioCallout").innerHTML = `<span>תזה מרכזית</span><p>${trend} ${location}. משטר שוק: ${a.regime}, ADX ${a.adx.value.toFixed(1)}. רמת Fibonacci הקרובה: ${(a.nearestFib.ratio * 100).toFixed(1)}%.</p>`;
 }
 
 function updateMetrics() {
@@ -567,6 +707,141 @@ function updateWyckoff() {
       </div>
     `;
   }).join("");
+}
+
+function updateDecisionCenter() {
+  const a = state.analysis;
+  const intervalLabels = { "15m": "15M", "1h": "1H", "4h": "4H", "1d": "1D" };
+  const intervalNames = { "15m": "קצר", "1h": "תוך יומי", "4h": "סווינג", "1d": "ראשי" };
+  const intervals = ["15m", "1h", "4h", "1d"];
+  const directions = intervals.map((interval) => {
+    const analysis = state.timeframeAnalyses[interval];
+    const direction = analysis.combined > 0.1 ? "bull" : analysis.combined < -0.1 ? "bear" : "neutral";
+    return { interval, analysis, direction };
+  });
+  const bullishFrames = directions.filter((item) => item.direction === "bull").length;
+  const bearishFrames = directions.filter((item) => item.direction === "bear").length;
+  const dominantDirection = bullishFrames > bearishFrames ? "bull" : bearishFrames > bullishFrames ? "bear" : "neutral";
+  const alignedFrames = dominantDirection === "neutral"
+    ? directions.filter((item) => item.direction === "neutral").length
+    : directions.filter((item) => item.direction === dominantDirection).length;
+
+  $("#timeframeMatrix").innerHTML = directions.map(({ interval, analysis, direction }) => `
+    <div class="timeframe-cell ${direction}">
+      <span>${intervalLabels[interval]}</span>
+      <strong>${direction === "bull" ? "שורי" : direction === "bear" ? "דובי" : "ניטרלי"}</strong>
+      <small>${intervalNames[interval]} · ${analysis.regime}</small>
+    </div>
+  `).join("");
+  $("#mtfAlignment").textContent = dominantDirection === "neutral"
+    ? `פיצול ${bullishFrames}/${bearishFrames}`
+    : `${alignedFrames}/4 מיושרים`;
+
+  const currentPrice = state.candles.at(-1).close;
+  const bullLead = a.bullish - a.bearish;
+  const bearLead = a.bearish - a.bullish;
+  const isBullSetup = a.bullish > a.neutral && bullLead >= 5;
+  const isBearSetup = a.bearish > a.neutral && bearLead >= 5;
+  const setupType = isBullSetup ? "bull" : isBearSetup ? "bear" : "neutral";
+  const bullBlock = a.orderBlocks.find((block) => block.type === "bull");
+  const bearBlock = a.orderBlocks.find((block) => block.type === "bear");
+  let entryLow;
+  let entryHigh;
+  let invalidation;
+  let targetOne;
+  let targetTwo;
+  let setupCondition;
+
+  if (setupType === "bull") {
+    entryLow = bullBlock?.low ?? a.fibLevels.find((level) => level.ratio === 0.705).price;
+    entryHigh = bullBlock?.high ?? a.fibLevels.find((level) => level.ratio === 0.618).price;
+    invalidation = bullBlock ? bullBlock.low - a.atrValue * 0.35 : a.rangeLow - a.atrValue * 0.2;
+    targetOne = Math.max(currentPrice + a.atrValue, a.fibLevels.find((level) => level.ratio === 0.382).price);
+    targetTwo = Math.max(targetOne, a.rangeHigh);
+    setupCondition = "תקף רק לאחר תגובה שורית באזור המעקב ושמירת מבנה עולה. סגירה מתחת לביטול התזה מבטלת את התרחיש.";
+  } else if (setupType === "bear") {
+    entryLow = bearBlock?.low ?? a.fibLevels.find((level) => level.ratio === 0.382).price;
+    entryHigh = bearBlock?.high ?? a.fibLevels.find((level) => level.ratio === 0.236).price;
+    invalidation = bearBlock ? bearBlock.high + a.atrValue * 0.35 : a.rangeHigh + a.atrValue * 0.2;
+    targetOne = Math.min(currentPrice - a.atrValue, a.fibLevels.find((level) => level.ratio === 0.618).price);
+    targetTwo = Math.min(targetOne, a.rangeLow);
+    setupCondition = "תקף רק לאחר דחייה דובית באזור המעקב ושבירת מבנה מטה. סגירה מעל ביטול התזה מבטלת את התרחיש.";
+  } else {
+    $("#setupDirection").textContent = "המתנה";
+    $("#entryZone").textContent = `${formatPrice(a.rangeHigh)} / ${formatPrice(a.rangeLow)}`;
+    $("#invalidationLevel").textContent = "חזרה לתוך הטווח";
+    $("#targetOne").textContent = "1 × ATR מהפריצה";
+    $("#targetTwo").textContent = "2 × ATR מהפריצה";
+    $("#riskReward").textContent = "אין יתרון ברור";
+    $("#setupCondition").textContent = "המתן לפריצה מאושרת של גבול הטווח, נפח גבוה מהממוצע וסגירה מחוץ לאזור. אין כרגע קונפלואנס מספק.";
+  }
+
+  if (setupType !== "neutral") {
+    const entryMid = (entryLow + entryHigh) / 2;
+    const risk = Math.abs(entryMid - invalidation);
+    const reward = Math.abs(targetTwo - entryMid);
+    const ratio = risk > 0 ? reward / risk : 0;
+    $("#setupDirection").textContent = setupType === "bull" ? "תרחיש שורי" : "תרחיש דובי";
+    $("#entryZone").textContent = `${formatPrice(Math.min(entryLow, entryHigh))} – ${formatPrice(Math.max(entryLow, entryHigh))}`;
+    $("#invalidationLevel").textContent = formatPrice(invalidation);
+    $("#targetOne").textContent = formatPrice(targetOne);
+    $("#targetTwo").textContent = formatPrice(targetTwo);
+    $("#riskReward").textContent = `1 : ${ratio.toFixed(2)}`;
+    $("#setupCondition").textContent = setupCondition;
+  }
+
+  const confluences = [
+    {
+      label: "סידור EMA 20 / 50 / 200",
+      value: a.trendScore > 0.2 ? "שורי" : a.trendScore < -0.2 ? "דובי" : "מעורב",
+      status: a.trendScore > 0.2 ? "positive" : a.trendScore < -0.2 ? "negative" : "neutral"
+    },
+    {
+      label: "RSI 14",
+      value: a.rsiValue.toFixed(1),
+      status: a.rsiValue > 55 ? "positive" : a.rsiValue < 45 ? "negative" : "neutral"
+    },
+    {
+      label: "MACD Histogram",
+      value: a.macdHistogram >= 0 ? "חיובי" : "שלילי",
+      status: a.macdHistogram >= 0 ? "positive" : "negative"
+    },
+    {
+      label: "מחיר מול VWAP",
+      value: currentPrice >= a.vwap.at(-1) ? "מעל" : "מתחת",
+      status: currentPrice >= a.vwap.at(-1) ? "positive" : "negative"
+    },
+    {
+      label: "ADX / עוצמת מגמה",
+      value: `${a.adx.value.toFixed(1)} · ${a.adx.plusDI >= a.adx.minusDI ? "+DI" : "−DI"}`,
+      status: a.adx.value < 20 ? "neutral" : a.adx.plusDI >= a.adx.minusDI ? "positive" : "negative"
+    },
+    {
+      label: "Stochastic",
+      value: a.stochastic.toFixed(1),
+      status: a.stochastic < 20 ? "positive" : a.stochastic > 80 ? "negative" : "neutral"
+    },
+    {
+      label: "ICT / נזילות",
+      value: a.ictScore > 0.15 ? "שורי" : a.ictScore < -0.15 ? "דובי" : "ללא יתרון",
+      status: a.ictScore > 0.15 ? "positive" : a.ictScore < -0.15 ? "negative" : "neutral"
+    },
+    {
+      label: "יישור רב־טווח",
+      value: dominantDirection === "neutral" ? `${bullishFrames}↑ / ${bearishFrames}↓` : `${alignedFrames}/4`,
+      status: dominantDirection === "bull" ? "positive" : dominantDirection === "bear" ? "negative" : "neutral"
+    }
+  ];
+  const positiveCount = confluences.filter((item) => item.status === "positive").length;
+  const negativeCount = confluences.filter((item) => item.status === "negative").length;
+  $("#confluenceScore").textContent = `${positiveCount} שורי · ${negativeCount} דובי`;
+  $("#confluenceList").innerHTML = confluences.map((item) => `
+    <div class="confluence-item ${item.status}">
+      <i class="confluence-light"></i>
+      <span>${item.label}</span>
+      <b>${item.value}</b>
+    </div>
+  `).join("");
 }
 
 function setupCanvas() {
@@ -793,7 +1068,7 @@ async function init() {
   renderAssetList();
   updateSelectedAsset();
   bindEvents();
-  await runAnalysis();
+  await Promise.all([runAnalysis(), fetchAssetTickers()]);
 }
 
 init();

@@ -4,19 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#07110f">
-  <title>Market Atlas | מעבדת ניתוח שוק</title>
+  <title>האתר של ארבעת הציידים | Market Atlas</title>
   <link rel="preconnect" href="https://api.binance.com">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=1.1">
 </head>
 <body>
   <div class="noise" aria-hidden="true"></div>
   <div class="app-shell">
     <header class="topbar">
-      <a class="brand" href="#" aria-label="Market Atlas">
-        <span class="brand-mark">MA</span>
+      <a class="brand" href="#" aria-label="האתר של ארבעת הציידים">
+        <span class="brand-mark">4H</span>
         <span>
-          <strong>MARKET ATLAS</strong>
-          <small>ICT ANALYSIS CONSOLE</small>
+          <strong>האתר של ארבעת הציידים</strong>
+          <small>MARKET ATLAS · ICT CONSOLE</small>
         </span>
       </a>
 
@@ -37,7 +37,7 @@
       <aside class="sidebar panel">
         <div class="side-heading">
           <span class="eyebrow">נכס לניתוח</span>
-          <span class="asset-count">8 נכסים</span>
+          <span class="asset-count" id="assetCount">-- נכסים</span>
         </div>
 
         <label class="search-box">
@@ -188,6 +188,52 @@
           </article>
         </section>
 
+        <section class="decision-grid">
+          <article class="decision-card panel">
+            <div class="panel-head compact">
+              <div>
+                <span class="eyebrow">MULTI TIMEFRAME</span>
+                <h2>יישור טווחי זמן</h2>
+              </div>
+              <span class="status-pill" id="mtfAlignment">--</span>
+            </div>
+            <div class="timeframe-matrix" id="timeframeMatrix"></div>
+            <p class="card-footnote">יישור בין טווחים מחזק תרחיש; סתירה ביניהם מגדילה סיכון לתנועה כוזבת.</p>
+          </article>
+
+          <article class="decision-card panel">
+            <div class="panel-head compact">
+              <div>
+                <span class="eyebrow">CONDITIONAL PLAN</span>
+                <h2>תוכנית תרחיש</h2>
+              </div>
+              <span class="status-pill" id="setupDirection">--</span>
+            </div>
+            <div class="setup-levels">
+              <div><span>אזור מעקב</span><strong id="entryZone">--</strong></div>
+              <div><span>ביטול תזה</span><strong id="invalidationLevel">--</strong></div>
+              <div><span>יעד ראשון</span><strong id="targetOne">--</strong></div>
+              <div><span>יעד שני</span><strong id="targetTwo">--</strong></div>
+            </div>
+            <div class="rr-row">
+              <span>יחס סיכוי / סיכון משוער</span>
+              <strong id="riskReward">--</strong>
+            </div>
+            <p class="card-footnote" id="setupCondition">ממתין לניתוח. הרמות אינן הוראת כניסה אוטומטית.</p>
+          </article>
+
+          <article class="decision-card panel">
+            <div class="panel-head compact">
+              <div>
+                <span class="eyebrow">CONFLUENCE CHECK</span>
+                <h2>לוח אישורים</h2>
+              </div>
+              <span class="status-pill" id="confluenceScore">--</span>
+            </div>
+            <div class="confluence-list" id="confluenceList"></div>
+          </article>
+        </section>
+
         <section class="analysis-grid">
           <article class="analysis-card panel">
             <div class="panel-head compact">
@@ -234,7 +280,7 @@
         </section>
 
         <footer class="footer">
-          <span>MARKET ATLAS v1.0</span>
+          <span>ארבעת הציידים · MARKET ATLAS v1.1</span>
           <span>נתונים חיים: Binance Public API · fallback: simulation</span>
           <button id="disclaimerButton">גילוי נאות וניהול סיכונים</button>
         </footer>
@@ -246,16 +292,17 @@
     <button class="dialog-close" id="dialogClose" aria-label="סגירה">×</button>
     <span class="eyebrow">איך זה עובד</span>
     <h2>מנוע תרחישים, לא כדור בדולח</h2>
-    <p>המערכת מנתחת עד 300 נרות ומשקללת מגמה, מומנטום, תנודתיות, Fibonacci, אזורי Order Block, פערי שווי הוגן, סריקות נזילות והקשר Wyckoff.</p>
+    <p>המערכת מנתחת עד 300 נרות בכל טווח זמן ומשקללת מגמה, ADX, Bollinger, Stochastic, מומנטום, תנודתיות, Fibonacci, אזורי Order Block, פערי שווי הוגן, סריקות נזילות והקשר Wyckoff.</p>
     <div class="method-grid">
-      <div><strong>35%</strong><span>מבנה ומגמה</span></div>
+      <div><strong>30%</strong><span>מבנה ומגמה</span></div>
       <div><strong>25%</strong><span>ICT ונזילות</span></div>
       <div><strong>20%</strong><span>מומנטום</span></div>
-      <div><strong>20%</strong><span>מיקום בטווח</span></div>
+      <div><strong>10%</strong><span>מיקום בטווח</span></div>
+      <div><strong>15%</strong><span>יישור טווחים</span></div>
     </div>
     <p class="dialog-warning">אין להשתמש בציון לבדו לפתיחת עסקה. יש להגדיר מראש נקודת ביטול תזה, גודל פוזיציה וסיכון מרבי. המערכת אינה מבצעת פעולות מסחר.</p>
   </dialog>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=1.1"></script>
 </body>
 </html>

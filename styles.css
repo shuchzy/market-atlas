@@ -67,7 +67,7 @@ button { color: inherit; }
   justify-self: start;
   display: flex;
   align-items: center;
-  direction: ltr;
+  direction: rtl;
   gap: 12px;
   color: var(--text);
   text-decoration: none;
@@ -85,7 +85,7 @@ button { color: inherit; }
   clip-path: polygon(18% 0, 100% 0, 100% 82%, 82% 100%, 0 100%, 0 18%);
 }
 
-.brand strong { display: block; font: 600 13px "IBM Plex Mono", monospace; letter-spacing: 0.16em; }
+.brand strong { display: block; font: 700 16px "Assistant", Arial, sans-serif; letter-spacing: 0; }
 .brand small { display: block; margin-top: 2px; color: var(--muted); font: 500 9px "IBM Plex Mono", monospace; letter-spacing: 0.12em; }
 
 .topbar-center {
@@ -429,6 +429,41 @@ button { color: inherit; }
 .metric-card div strong { margin-top: 3px; font-size: 14px; }
 .metric-card small { max-width: 80px; color: var(--muted); font: 500 9px "IBM Plex Mono", monospace; text-align: left; direction: ltr; }
 
+.decision-grid { display: grid; grid-template-columns: 1fr 1.08fr 1fr; gap: 12px; }
+.decision-card { padding: 17px; min-width: 0; }
+.card-footnote { margin: 12px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+
+.timeframe-matrix { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; padding-top: 13px; direction: ltr; }
+.timeframe-cell { padding: 11px 5px; border: 1px solid var(--line); border-radius: 9px; text-align: center; background: rgba(255, 255, 255, 0.018); }
+.timeframe-cell span, .timeframe-cell strong, .timeframe-cell small { display: block; }
+.timeframe-cell span { color: var(--muted); font: 600 9px "IBM Plex Mono", monospace; }
+.timeframe-cell strong { margin: 7px 0 3px; font-size: 12px; }
+.timeframe-cell small { color: var(--muted); font: 500 8px "IBM Plex Mono", monospace; }
+.timeframe-cell.bull { border-color: rgba(94, 224, 160, 0.24); background: rgba(94, 224, 160, 0.045); }
+.timeframe-cell.bull strong { color: var(--green); }
+.timeframe-cell.bear { border-color: rgba(255, 107, 120, 0.24); background: rgba(255, 107, 120, 0.045); }
+.timeframe-cell.bear strong { color: var(--red); }
+.timeframe-cell.neutral strong { color: var(--amber); }
+
+.setup-levels { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 13px; }
+.setup-levels div { padding: 9px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255, 255, 255, 0.018); }
+.setup-levels span, .setup-levels strong { display: block; }
+.setup-levels span { color: var(--muted); font-size: 9px; }
+.setup-levels strong { margin-top: 4px; font: 600 10px "IBM Plex Mono", monospace; direction: ltr; text-align: right; }
+.rr-row { margin-top: 8px; padding: 9px 10px; display: flex; align-items: center; justify-content: space-between; border-radius: 8px; background: rgba(94, 224, 160, 0.045); }
+.rr-row span { color: var(--muted); font-size: 10px; }
+.rr-row strong { color: var(--green-bright); font: 600 12px "IBM Plex Mono", monospace; }
+
+.confluence-list { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; }
+.confluence-item { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 8px; padding: 6px 2px; border-bottom: 1px solid rgba(140, 184, 168, 0.07); }
+.confluence-item:last-child { border-bottom: 0; }
+.confluence-light { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.confluence-item.positive .confluence-light { background: var(--green); box-shadow: 0 0 8px rgba(94, 224, 160, 0.5); }
+.confluence-item.negative .confluence-light { background: var(--red); box-shadow: 0 0 8px rgba(255, 107, 120, 0.4); }
+.confluence-item.neutral .confluence-light { background: var(--amber); }
+.confluence-item span { font-size: 10px; }
+.confluence-item b { color: var(--muted); font: 500 9px "IBM Plex Mono", monospace; }
+
 .analysis-grid { display: grid; grid-template-columns: 1.05fr 1fr 1.1fr; gap: 12px; }
 .panel-head.compact { padding-bottom: 13px; border-bottom: 1px solid var(--line); }
 .level-list { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; }
@@ -480,7 +515,7 @@ dialog::backdrop { background: rgba(2, 8, 7, 0.78); backdrop-filter: blur(8px); 
 .dialog-close { position: absolute; top: 12px; left: 12px; width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); background: transparent; cursor: pointer; }
 dialog h2 { margin: 8px 0 10px; }
 dialog p { color: #afc1ba; line-height: 1.6; }
-.method-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 18px 0; }
+.method-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 18px 0; }
 .method-grid div { padding: 12px 6px; border: 1px solid var(--line); border-radius: 10px; text-align: center; }
 .method-grid strong, .method-grid span { display: block; }
 .method-grid strong { color: var(--green); font: 600 17px "IBM Plex Mono", monospace; }
@@ -518,6 +553,8 @@ body.light-mode .chart-loader { background: rgba(244, 249, 246, 0.9); }
   .risk-warning { grid-column: 1 / -1; }
   .analysis-grid { grid-template-columns: 1fr 1fr; }
   .analysis-grid article:last-child { grid-column: 1 / -1; }
+  .decision-grid { grid-template-columns: 1fr 1fr; }
+  .decision-grid article:last-child { grid-column: 1 / -1; }
 }
 
 @media (max-width: 900px) {
@@ -531,6 +568,8 @@ body.light-mode .chart-loader { background: rgba(244, 249, 246, 0.9); }
   .control-strip { grid-template-columns: 1fr auto; }
   .launch-button { grid-column: 1 / -1; width: 100%; }
   .metrics-grid { grid-template-columns: 1fr 1fr; }
+  .decision-grid { grid-template-columns: 1fr; }
+  .decision-grid article:last-child { grid-column: auto; }
 }
 
 @media (max-width: 620px) {
@@ -546,7 +585,7 @@ body.light-mode .chart-loader { background: rgba(244, 249, 246, 0.9); }
   .chart-footer div:nth-child(3) { border: 0; }
   .probability-card { display: flex; }
   .probability-gauge { margin: 18px auto; }
-  .metrics-grid, .analysis-grid { grid-template-columns: 1fr; }
+  .metrics-grid, .analysis-grid, .decision-grid { grid-template-columns: 1fr; }
   .analysis-grid article:last-child { grid-column: auto; }
   .footer { flex-wrap: wrap; }
   .footer button { width: 100%; margin: 0; text-align: right; }
