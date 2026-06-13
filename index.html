@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07110f">
+  <title>Market Atlas | מעבדת ניתוח שוק</title>
+  <link rel="preconnect" href="https://api.binance.com">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Market Atlas">
+        <span class="brand-mark">MA</span>
+        <span>
+          <strong>MARKET ATLAS</strong>
+          <small>ICT ANALYSIS CONSOLE</small>
+        </span>
+      </a>
+
+      <div class="topbar-center">
+        <span class="live-dot"></span>
+        <span id="marketStatus">מתחבר לנתוני שוק</span>
+        <span class="divider"></span>
+        <span id="lastUpdate">--:--:--</span>
+      </div>
+
+      <div class="topbar-actions">
+        <button class="icon-button" id="methodButton" aria-label="מתודולוגיה">?</button>
+        <button class="icon-button" id="themeButton" aria-label="החלפת תצוגה">◐</button>
+      </div>
+    </header>
+
+    <main class="dashboard">
+      <aside class="sidebar panel">
+        <div class="side-heading">
+          <span class="eyebrow">נכס לניתוח</span>
+          <span class="asset-count">8 נכסים</span>
+        </div>
+
+        <label class="search-box">
+          <span>⌕</span>
+          <input id="assetSearch" type="search" placeholder="חיפוש נכס..." autocomplete="off">
+        </label>
+
+        <div class="asset-list" id="assetList"></div>
+
+        <div class="sidebar-note">
+          <span class="note-icon">i</span>
+          <p>זהב מוצג באמצעות PAX Gold, נכס קריפטוגרפי הצמוד למחיר אונקיית זהב.</p>
+        </div>
+      </aside>
+
+      <section class="workspace">
+        <section class="control-strip panel">
+          <div class="selected-asset">
+            <div class="asset-logo large" id="selectedIcon">₿</div>
+            <div>
+              <div class="asset-title-row">
+                <h1 id="selectedName">Bitcoin</h1>
+                <span class="pair" id="selectedPair">BTC / USDT</span>
+              </div>
+              <div class="price-row">
+                <strong id="selectedPrice">$--</strong>
+                <span id="selectedChange" class="change neutral">--%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="timeframes" role="group" aria-label="טווח זמן">
+            <button data-interval="15m">15ד׳</button>
+            <button data-interval="1h">1ש׳</button>
+            <button data-interval="4h" class="active">4ש׳</button>
+            <button data-interval="1d">1י׳</button>
+          </div>
+
+          <button class="launch-button" id="launchAnalysis">
+            <span class="launch-copy">
+              <small>הפעל מנוע רב־שכבתי</small>
+              <strong>שגר ניתוח</strong>
+            </span>
+            <span class="launch-icon">↗</span>
+          </button>
+        </section>
+
+        <section class="hero-grid">
+          <article class="chart-card panel">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">מפת מחיר</span>
+                <h2>מבנה שוק ואזורי עניין</h2>
+              </div>
+              <div class="chart-actions">
+                <button class="mini-button active" data-layer="fib">FIB</button>
+                <button class="mini-button active" data-layer="ob">OB</button>
+                <button class="mini-button active" data-layer="fvg">FVG</button>
+                <button class="mini-button active" data-layer="ema">EMA</button>
+              </div>
+            </div>
+
+            <div class="chart-legend">
+              <span><i class="legend-line ema-fast"></i> EMA 20</span>
+              <span><i class="legend-line ema-slow"></i> EMA 50</span>
+              <span><i class="legend-box bull-ob"></i> Bullish OB</span>
+              <span><i class="legend-box bear-ob"></i> Bearish OB</span>
+            </div>
+
+            <div class="chart-wrap">
+              <canvas id="marketChart"></canvas>
+              <div class="chart-loader" id="chartLoader">
+                <div class="scanner"></div>
+                <span>טוען נתוני שוק...</span>
+              </div>
+              <div class="chart-tooltip" id="chartTooltip"></div>
+            </div>
+
+            <div class="chart-footer">
+              <div><span>טווח נצפה</span><strong id="rangeValue">--</strong></div>
+              <div><span>ATR 14</span><strong id="atrValue">--</strong></div>
+              <div><span>RSI 14</span><strong id="rsiValue">--</strong></div>
+              <div><span>יחס נפח</span><strong id="volumeValue">--</strong></div>
+            </div>
+          </article>
+
+          <aside class="probability-card panel">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">Scenario Engine</span>
+                <h2>מפת הסתברויות</h2>
+              </div>
+              <span class="confidence-badge" id="confidenceBadge">ממתין</span>
+            </div>
+
+            <div class="probability-gauge" id="probabilityGauge">
+              <div class="gauge-inner">
+                <span>תרחיש מוביל</span>
+                <strong id="leadingProbability">--%</strong>
+                <small id="leadingScenario">טוען</small>
+              </div>
+            </div>
+
+            <div class="scenario-bars">
+              <div class="scenario-row">
+                <div><span class="scenario-dot bullish"></span><strong>עולה</strong><b id="bullishValue">--%</b></div>
+                <div class="bar-track"><i id="bullishBar"></i></div>
+              </div>
+              <div class="scenario-row">
+                <div><span class="scenario-dot neutral"></span><strong>דשדוש</strong><b id="neutralValue">--%</b></div>
+                <div class="bar-track"><i id="neutralBar"></i></div>
+              </div>
+              <div class="scenario-row">
+                <div><span class="scenario-dot bearish"></span><strong>יורד</strong><b id="bearishValue">--%</b></div>
+                <div class="bar-track"><i id="bearishBar"></i></div>
+              </div>
+            </div>
+
+            <div class="scenario-callout" id="scenarioCallout">
+              <span>תזה מרכזית</span>
+              <p>הפעל ניתוח לקבלת תמונת מצב.</p>
+            </div>
+
+            <p class="risk-warning">הסתברויות הן ציון מודל המבוסס על נתוני עבר, לא תחזית ודאית ולא הוראת מסחר.</p>
+          </aside>
+        </section>
+
+        <section class="metrics-grid">
+          <article class="metric-card panel">
+            <span class="metric-icon structure">⌁</span>
+            <div><span>מבנה שוק</span><strong id="structureMetric">--</strong></div>
+            <small id="structureDetail">HH / HL</small>
+          </article>
+          <article class="metric-card panel">
+            <span class="metric-icon liquidity">◌</span>
+            <div><span>נזילות</span><strong id="liquidityMetric">--</strong></div>
+            <small id="liquidityDetail">אין סריקה</small>
+          </article>
+          <article class="metric-card panel">
+            <span class="metric-icon momentum">↯</span>
+            <div><span>מומנטום</span><strong id="momentumMetric">--</strong></div>
+            <small id="momentumDetail">RSI / MACD</small>
+          </article>
+          <article class="metric-card panel">
+            <span class="metric-icon volatility">⌇</span>
+            <div><span>תנודתיות</span><strong id="volatilityMetric">--</strong></div>
+            <small id="volatilityDetail">ATR%</small>
+          </article>
+        </section>
+
+        <section class="analysis-grid">
+          <article class="analysis-card panel">
+            <div class="panel-head compact">
+              <div>
+                <span class="eyebrow">ICT / SMART MONEY</span>
+                <h2>Order Blocks ונזילות</h2>
+              </div>
+              <span class="status-pill" id="obStatus">סורק</span>
+            </div>
+            <div class="level-list" id="orderBlockList"></div>
+          </article>
+
+          <article class="analysis-card panel">
+            <div class="panel-head compact">
+              <div>
+                <span class="eyebrow">DEALING RANGE</span>
+                <h2>מפת Fibonacci</h2>
+              </div>
+              <span class="status-pill" id="fibBias">--</span>
+            </div>
+            <div class="fib-visual" id="fibVisual"></div>
+          </article>
+
+          <article class="analysis-card panel">
+            <div class="panel-head compact">
+              <div>
+                <span class="eyebrow">COMPOSITE OPERATOR</span>
+                <h2>Wyckoff</h2>
+              </div>
+              <span class="status-pill" id="wyckoffPhase">--</span>
+            </div>
+            <div class="wyckoff-map">
+              <div class="phase-track">
+                <i id="wyckoffMarker"></i>
+                <span>צבירה</span>
+                <span>Markup</span>
+                <span>פיזור</span>
+                <span>Markdown</span>
+              </div>
+              <p id="wyckoffText">ממתין לנתונים.</p>
+            </div>
+            <div class="signal-stack" id="signalStack"></div>
+          </article>
+        </section>
+
+        <footer class="footer">
+          <span>MARKET ATLAS v1.0</span>
+          <span>נתונים חיים: Binance Public API · fallback: simulation</span>
+          <button id="disclaimerButton">גילוי נאות וניהול סיכונים</button>
+        </footer>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="infoDialog">
+    <button class="dialog-close" id="dialogClose" aria-label="סגירה">×</button>
+    <span class="eyebrow">איך זה עובד</span>
+    <h2>מנוע תרחישים, לא כדור בדולח</h2>
+    <p>המערכת מנתחת עד 300 נרות ומשקללת מגמה, מומנטום, תנודתיות, Fibonacci, אזורי Order Block, פערי שווי הוגן, סריקות נזילות והקשר Wyckoff.</p>
+    <div class="method-grid">
+      <div><strong>35%</strong><span>מבנה ומגמה</span></div>
+      <div><strong>25%</strong><span>ICT ונזילות</span></div>
+      <div><strong>20%</strong><span>מומנטום</span></div>
+      <div><strong>20%</strong><span>מיקום בטווח</span></div>
+    </div>
+    <p class="dialog-warning">אין להשתמש בציון לבדו לפתיחת עסקה. יש להגדיר מראש נקודת ביטול תזה, גודל פוזיציה וסיכון מרבי. המערכת אינה מבצעת פעולות מסחר.</p>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
