@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&family=Cinzel:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap');
 
 :root {
   color-scheme: dark;
@@ -785,4 +785,285 @@ body.light-mode .chart-loader { background: rgba(244, 249, 246, 0.9); }
   .method-grid { grid-template-columns: 1fr 1fr; }
   .export-dialog-actions { align-items: stretch; flex-direction: column; }
   .download-export { width: 100%; }
+}
+
+/* Four Hunters v2: luxury black-and-gold theme */
+:root,
+body.light-mode {
+  --bg: #020202;
+  --bg-soft: #080704;
+  --panel: rgba(8, 8, 7, 0.94);
+  --panel-strong: #0d0c09;
+  --line: rgba(214, 170, 53, 0.22);
+  --line-strong: rgba(243, 212, 122, 0.48);
+  --text: #f7f1df;
+  --muted: #aaa28f;
+  --green: #37d99a;
+  --green-bright: #89f4c4;
+  --red: #ff6176;
+  --amber: #d6aa35;
+  --cyan: #68d7d0;
+  --purple: #bf9cff;
+  --gold: #d6aa35;
+  --gold-bright: #f3d47a;
+  --gold-dark: #8d6817;
+  --shadow: 0 22px 68px rgba(0, 0, 0, 0.58);
+}
+
+body,
+body.light-mode {
+  background:
+    radial-gradient(circle at 50% -12%, rgba(214, 170, 53, 0.16), transparent 30rem),
+    radial-gradient(circle at 105% 52%, rgba(214, 170, 53, 0.07), transparent 28rem),
+    linear-gradient(rgba(214, 170, 53, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(214, 170, 53, 0.028) 1px, transparent 1px),
+    #020202;
+  background-size: auto, auto, 44px 44px, 44px 44px, auto;
+  color: var(--text);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(circle at center, transparent 34%, rgba(0, 0, 0, 0.67) 100%);
+}
+
+.noise { opacity: 0.035; mix-blend-mode: screen; }
+
+.login-gate {
+  background:
+    radial-gradient(circle at 50% 20%, rgba(214, 170, 53, 0.18), transparent 25rem),
+    linear-gradient(rgba(214, 170, 53, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(214, 170, 53, 0.035) 1px, transparent 1px),
+    #020202;
+  background-size: auto, 42px 42px, 42px 42px, auto;
+}
+
+.login-card {
+  border-color: rgba(214, 170, 53, 0.42);
+  background:
+    linear-gradient(145deg, rgba(214, 170, 53, 0.08), transparent 34%),
+    rgba(7, 7, 6, 0.97);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.75), inset 0 1px rgba(243, 212, 122, 0.12), 0 0 70px rgba(214, 170, 53, 0.08);
+}
+
+.login-card::before { background: linear-gradient(90deg, transparent, var(--gold-bright), transparent); }
+
+.login-emblem,
+.brand-mark {
+  border-color: rgba(243, 212, 122, 0.55);
+  background: linear-gradient(145deg, #2c230c, #090806 66%);
+  color: var(--gold-bright);
+  font-family: "Cinzel", serif;
+  letter-spacing: -0.08em;
+  box-shadow: inset 0 1px rgba(255, 243, 194, 0.25), 0 0 34px rgba(214, 170, 53, 0.2);
+}
+
+.login-card h1,
+.brand strong {
+  color: #fff9e9;
+  text-shadow: 0 0 28px rgba(214, 170, 53, 0.12);
+}
+
+.login-form label > span,
+.eyebrow,
+.brand small,
+.panel-head h2 {
+  color: var(--gold-bright);
+}
+
+.login-form input,
+.search-box {
+  border-color: rgba(214, 170, 53, 0.24);
+  background: #050504;
+  color: var(--text);
+}
+
+.login-form input:focus,
+.search-box:focus-within {
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 0 3px rgba(214, 170, 53, 0.11);
+}
+
+.login-submit,
+.launch-button,
+.download-export {
+  border-color: #f4d980;
+  background: linear-gradient(135deg, #8e6816 0%, #e1b944 48%, #f3d47a 72%, #a77d20 100%);
+  color: #090704;
+  box-shadow: inset 0 1px rgba(255, 252, 223, 0.6), 0 10px 34px rgba(214, 170, 53, 0.2);
+}
+
+.login-submit:hover,
+.launch-button:hover,
+.download-export:hover {
+  filter: brightness(1.09);
+  box-shadow: inset 0 1px rgba(255, 252, 223, 0.7), 0 14px 42px rgba(214, 170, 53, 0.3);
+}
+
+.topbar {
+  position: relative;
+  border-bottom-color: rgba(214, 170, 53, 0.2);
+  background: rgba(2, 2, 2, 0.91);
+  box-shadow: 0 12px 50px rgba(0, 0, 0, 0.42);
+}
+
+.topbar::after {
+  content: "";
+  position: absolute;
+  right: 4vw;
+  bottom: -1px;
+  left: 4vw;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(243, 212, 122, 0.58), transparent);
+}
+
+.brand strong { font-size: 17px; }
+.brand small { font-family: "Cinzel", serif; color: var(--gold-bright); letter-spacing: 0.14em; }
+
+body.light-mode .topbar { background: rgba(2, 2, 2, 0.91); }
+body.light-mode .panel { background: linear-gradient(145deg, rgba(214, 170, 53, 0.045), transparent 30%), rgba(8, 8, 7, 0.94); }
+body.light-mode .chart-wrap { background: #030303; }
+body.light-mode .gauge-inner,
+body.light-mode dialog { background: #080704; }
+body.light-mode .chart-loader { background: rgba(3, 3, 3, 0.9); }
+
+.panel,
+.sidebar,
+.metric-card,
+.outlook-card,
+.decision-card,
+dialog {
+  border-color: rgba(214, 170, 53, 0.21);
+  background: linear-gradient(145deg, rgba(214, 170, 53, 0.045), transparent 30%), rgba(8, 8, 7, 0.94);
+  box-shadow: 0 18px 58px rgba(0, 0, 0, 0.4), inset 0 1px rgba(243, 212, 122, 0.055);
+}
+
+.panel:hover,
+.metric-card:hover,
+.outlook-card:hover { border-color: rgba(214, 170, 53, 0.34); }
+
+.asset-item:hover {
+  border-color: rgba(214, 170, 53, 0.18);
+  background: rgba(214, 170, 53, 0.055);
+}
+
+.asset-item.active {
+  border-color: rgba(243, 212, 122, 0.48);
+  background: linear-gradient(90deg, rgba(214, 170, 53, 0.17), rgba(214, 170, 53, 0.035));
+  box-shadow: inset -3px 0 var(--gold-bright);
+}
+
+.asset-item.active .asset-name strong { color: #fff5d5; }
+
+.market-status,
+.status-pill,
+.confidence-badge {
+  border-color: rgba(214, 170, 53, 0.28);
+  background: rgba(214, 170, 53, 0.08);
+  color: var(--gold-bright);
+}
+
+.control-strip,
+.timeframes,
+.chart-actions {
+  border-color: rgba(214, 170, 53, 0.19);
+  background: rgba(5, 5, 4, 0.88);
+}
+
+.timeframes button:hover,
+.export-analysis-button:hover,
+.icon-button:hover {
+  border-color: rgba(214, 170, 53, 0.48);
+  color: var(--gold-bright);
+  background: rgba(214, 170, 53, 0.08);
+}
+
+.timeframes button.active {
+  color: #fff4cf;
+  background: linear-gradient(135deg, rgba(214, 170, 53, 0.26), rgba(214, 170, 53, 0.08));
+  box-shadow: inset 0 0 0 1px rgba(243, 212, 122, 0.32);
+}
+
+.chart-wrap {
+  border-color: rgba(214, 170, 53, 0.22);
+  background:
+    linear-gradient(rgba(214, 170, 53, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(214, 170, 53, 0.025) 1px, transparent 1px),
+    #030303;
+  background-size: 34px 34px, 34px 34px, auto;
+}
+
+.gauge-inner {
+  border-color: rgba(214, 170, 53, 0.18);
+  background: #080704;
+}
+
+.metric-card,
+.decision-card,
+.outlook-card { position: relative; overflow: hidden; }
+
+.metric-card::after,
+.decision-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 14%;
+  left: 14%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(243, 212, 122, 0.42), transparent);
+}
+
+.outlook-head strong,
+.level-price,
+.indicator-value { color: var(--gold-bright); }
+
+.scenario-callout {
+  border-color: rgba(214, 170, 53, 0.18);
+  background: rgba(214, 170, 53, 0.045);
+}
+
+.scenario-callout span { color: var(--gold-bright); }
+.scenario-callout p,
+.outlook-card p { color: #c9c0aa; }
+
+.panel-head.compact,
+.level-row,
+.signal-row,
+.indicator-row { border-color: rgba(214, 170, 53, 0.12); }
+
+.export-analysis-button {
+  border-color: rgba(214, 170, 53, 0.34);
+  color: var(--gold-bright);
+  background: rgba(214, 170, 53, 0.08);
+}
+
+.export-preview-wrap {
+  border-color: rgba(214, 170, 53, 0.24);
+  background: #030303;
+}
+
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(9px);
+}
+
+.footer {
+  border-top-color: rgba(214, 170, 53, 0.16);
+  color: #8d856f;
+}
+
+.footer button { color: var(--gold-bright); }
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(var(--gold-dark), var(--gold));
+  border: 3px solid #040403;
+}
+
+::selection {
+  background: rgba(214, 170, 53, 0.34);
+  color: #fff9e9;
 }

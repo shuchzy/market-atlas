@@ -1319,31 +1319,46 @@ async function exportAnalysisImage() {
     const outlooks = state.futureOutlooks;
 
     const background = ctx.createLinearGradient(0, 0, 1800, 1180);
-    background.addColorStop(0, "#07110f");
-    background.addColorStop(0.55, "#0b1b17");
-    background.addColorStop(1, "#071310");
+    background.addColorStop(0, "#020202");
+    background.addColorStop(0.55, "#0a0906");
+    background.addColorStop(1, "#020202");
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = "rgba(94,224,160,0.045)";
+    ctx.strokeStyle = "rgba(214,170,53,0.045)";
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= canvas.width; x += 48) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= canvas.height; y += 48) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = "rgba(214,170,53,0.075)";
     ctx.beginPath();
     ctx.arc(1500, 80, 330, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.direction = "rtl";
     ctx.textAlign = "right";
-    ctx.fillStyle = "#edf7f2";
+    ctx.fillStyle = "#fff7dc";
     ctx.font = '700 42px "Arial"';
     ctx.fillText("מפת העתיד של ארבעת הציידים", 1730, 65);
-    ctx.fillStyle = "#829b91";
+    ctx.fillStyle = "#aaa28f";
     ctx.font = '500 18px "Arial"';
     ctx.fillText(`${state.asset.name} · ${state.asset.code}/USDT · טווח גרף ${state.interval.toUpperCase()}`, 1730, 100);
     ctx.direction = "ltr";
     ctx.textAlign = "left";
-    ctx.fillStyle = "#5ee0a0";
+    ctx.fillStyle = "#f3d47a";
     ctx.font = '600 18px "Arial"';
     ctx.fillText(`GENERATED ${new Date().toLocaleString("en-GB")}`, 70, 70);
-    ctx.fillStyle = "#829b91";
+    ctx.fillStyle = "#aaa28f";
     ctx.fillText(`LIVE SOURCE: ${state.source === "live" ? "BINANCE" : "SIMULATION"}`, 70, 100);
 
     const plot = { x: 70, y: 150, width: 1320, height: 660 };
@@ -1367,18 +1382,18 @@ async function exportAnalysisImage() {
     const historyX = (index) => plot.x + index / Math.max(candles.length - 1, 1) * historyWidth;
 
     canvasRoundRect(ctx, plot.x, plot.y, plot.width, plot.height, 18);
-    ctx.fillStyle = "rgba(4,13,11,0.68)";
+    ctx.fillStyle = "rgba(3,3,3,0.86)";
     ctx.fill();
-    ctx.strokeStyle = "rgba(140,184,168,0.18)";
+    ctx.strokeStyle = "rgba(214,170,53,0.28)";
     ctx.lineWidth = 1;
     ctx.stroke();
 
     const futureGradient = ctx.createLinearGradient(plot.x + historyWidth, 0, plot.x + plot.width, 0);
-    futureGradient.addColorStop(0, "rgba(95,216,213,0.025)");
-    futureGradient.addColorStop(1, "rgba(95,216,213,0.09)");
+    futureGradient.addColorStop(0, "rgba(214,170,53,0.025)");
+    futureGradient.addColorStop(1, "rgba(214,170,53,0.12)");
     ctx.fillStyle = futureGradient;
     ctx.fillRect(plot.x + historyWidth, plot.y, futureWidth, priceHeight);
-    ctx.fillStyle = "#5fd8d5";
+    ctx.fillStyle = "#f3d47a";
     ctx.font = '600 15px "Arial"';
     ctx.textAlign = "center";
     ctx.fillText("מרחב תרחישים עתידי", plot.x + historyWidth + futureWidth / 2, plot.y + 28);
@@ -1386,13 +1401,13 @@ async function exportAnalysisImage() {
     for (let i = 0; i <= 6; i += 1) {
       const y = plot.y + i / 6 * priceHeight;
       const price = priceMax - i / 6 * (priceMax - priceMin);
-      ctx.strokeStyle = "rgba(140,184,168,0.11)";
+      ctx.strokeStyle = "rgba(214,170,53,0.105)";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(plot.x, y);
       ctx.lineTo(plot.x + plot.width, y);
       ctx.stroke();
-      ctx.fillStyle = "#829b91";
+      ctx.fillStyle = "#aaa28f";
       ctx.font = '500 14px "Arial"';
       ctx.textAlign = "right";
       ctx.fillText(formatPrice(price), plot.x + plot.width - 10, y - 10);
@@ -1441,7 +1456,7 @@ async function exportAnalysisImage() {
     candles.forEach((candle, index) => {
       const x = historyX(index);
       const up = candle.close >= candle.open;
-      const color = up ? "#5ee0a0" : "#ff6b78";
+      const color = up ? "#37d99a" : "#ff6176";
       ctx.strokeStyle = color;
       ctx.fillStyle = color;
       ctx.lineWidth = 1;
@@ -1459,7 +1474,7 @@ async function exportAnalysisImage() {
       ctx.globalAlpha = 1;
     });
 
-    ctx.strokeStyle = "rgba(140,184,168,0.32)";
+    ctx.strokeStyle = "rgba(243,212,122,0.36)";
     ctx.setLineDash([5, 5]);
     ctx.beginPath();
     ctx.moveTo(plot.x + historyWidth, plot.y);
@@ -1476,13 +1491,13 @@ async function exportAnalysisImage() {
     const bullPoints = [startPoint, ...outlooks.map((outlook, index) => ({ x: futureXs[index], y: priceY(outlook.bullishTarget) }))];
     const flatPoints = [startPoint, ...outlooks.map((outlook, index) => ({ x: futureXs[index], y: priceY((outlook.flatLow + outlook.flatHigh) / 2) }))];
     const bearPoints = [startPoint, ...outlooks.map((outlook, index) => ({ x: futureXs[index], y: priceY(outlook.bearishTarget) }))];
-    drawExportPath(ctx, bullPoints, "#5ee0a0");
-    drawExportPath(ctx, flatPoints, "#f4c66b", true);
-    drawExportPath(ctx, bearPoints, "#ff6b78");
+    drawExportPath(ctx, bullPoints, "#37d99a");
+    drawExportPath(ctx, flatPoints, "#d6aa35", true);
+    drawExportPath(ctx, bearPoints, "#ff6176");
 
     outlooks.forEach((outlook, index) => {
       const x = futureXs[index];
-      ctx.fillStyle = "#829b91";
+      ctx.fillStyle = "#aaa28f";
       ctx.font = '600 14px "Arial"';
       ctx.textAlign = "center";
       ctx.fillText(outlook.label, x, plot.y + priceHeight - 15);
@@ -1491,14 +1506,14 @@ async function exportAnalysisImage() {
       canvasPill(ctx, `↓ ${outlook.bearish}%`, x - 12, priceY(outlook.bearishTarget) + 12, "rgba(255,107,120,0.16)", "#ff8e98", "right");
     });
 
-    ctx.strokeStyle = "#edf7f2";
+    ctx.strokeStyle = "#f3d47a";
     ctx.setLineDash([7, 5]);
     ctx.beginPath();
     ctx.moveTo(plot.x + historyWidth - 20, priceY(current));
     ctx.lineTo(plot.x + plot.width, priceY(current));
     ctx.stroke();
     ctx.setLineDash([]);
-    canvasPill(ctx, `NOW ${formatPrice(current)}`, plot.x + historyWidth - 10, priceY(current) - 17, "#edf7f2", "#07110f", "right");
+    canvasPill(ctx, `NOW ${formatPrice(current)}`, plot.x + historyWidth - 10, priceY(current) - 17, "#f3d47a", "#090704", "right");
 
     const summaryY = 845;
     const columnWidth = 535;
@@ -1530,7 +1545,7 @@ async function exportAnalysisImage() {
     ];
     cards.forEach((card) => {
       canvasRoundRect(ctx, card.x, summaryY, columnWidth, 170, 16);
-      ctx.fillStyle = "rgba(13,28,24,0.9)";
+      ctx.fillStyle = "rgba(8,8,7,0.94)";
       ctx.fill();
       ctx.strokeStyle = `${card.color}55`;
       ctx.stroke();
@@ -1539,10 +1554,10 @@ async function exportAnalysisImage() {
       ctx.fillStyle = card.color;
       ctx.font = '700 24px "Arial"';
       ctx.fillText(`${card.title} · ${card.probability}%`, card.x + columnWidth - 22, summaryY + 40);
-      ctx.fillStyle = "#edf7f2";
+      ctx.fillStyle = "#fff7dc";
       ctx.font = '600 20px "Arial"';
       ctx.fillText(`יעד 7 ימים: ${card.target}`, card.x + columnWidth - 22, summaryY + 78);
-      ctx.fillStyle = "#9eb2aa";
+      ctx.fillStyle = "#b8ad94";
       ctx.font = '500 17px "Arial"';
       canvasWrapText(ctx, card.reason, card.x + columnWidth - 22, summaryY + 113, columnWidth - 44, 25, 2);
     });
@@ -1550,15 +1565,15 @@ async function exportAnalysisImage() {
     const footerY = 1045;
     ctx.direction = "rtl";
     ctx.textAlign = "right";
-    ctx.fillStyle = "#edf7f2";
+    ctx.fillStyle = "#fff7dc";
     ctx.font = '700 18px "Arial"';
     ctx.fillText(`ביטול תזה: ${$("#invalidationLevel").textContent} · ADX ${a.adx.value.toFixed(1)} · RSI ${a.rsiValue.toFixed(1)} · Wyckoff ${a.wyckoff.phase}`, 1730, footerY);
-    ctx.fillStyle = "#71877e";
+    ctx.fillStyle = "#8f8775";
     ctx.font = '500 14px "Arial"';
     ctx.fillText("התרחישים הם ניתוח הסתברותי המבוסס על נתוני עבר ואינם תחזית ודאית או הוראת מסחר.", 1730, footerY + 35);
     ctx.direction = "ltr";
     ctx.textAlign = "left";
-    ctx.fillStyle = "#5ee0a0";
+    ctx.fillStyle = "#f3d47a";
     ctx.font = '600 16px "Arial"';
     ctx.fillText("FOUR HUNTERS · MARKET ATLAS", 70, footerY + 18);
 
