@@ -6,11 +6,42 @@
   <meta name="theme-color" content="#07110f">
   <title>האתר של ארבעת הציידים | Market Atlas</title>
   <link rel="preconnect" href="https://api.binance.com">
-  <link rel="stylesheet" href="styles.css?v=1.1">
+  <link rel="stylesheet" href="styles.css?v=1.2">
 </head>
-<body>
+<body class="auth-locked">
   <div class="noise" aria-hidden="true"></div>
-  <div class="app-shell">
+
+  <section class="login-gate" id="loginGate" aria-labelledby="loginTitle">
+    <div class="login-card">
+      <div class="login-emblem">4H</div>
+      <span class="eyebrow">PRIVATE MARKET CONSOLE</span>
+      <h1 id="loginTitle">האתר של ארבעת הציידים</h1>
+      <p>המערכת מיועדת למשתמשים מורשים בלבד.</p>
+
+      <form id="loginForm" class="login-form" novalidate>
+        <label>
+          <span>שם משתמש</span>
+          <input id="loginUsername" name="username" type="text" autocomplete="username" required>
+        </label>
+        <label>
+          <span>סיסמה</span>
+          <div class="password-field">
+            <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+            <button type="button" id="togglePassword" aria-label="הצגת סיסמה">הצג</button>
+          </div>
+        </label>
+        <p class="login-error" id="loginError" role="alert" aria-live="polite"></p>
+        <button class="login-submit" type="submit">
+          <span>כניסה למערכת</span>
+          <b>←</b>
+        </button>
+      </form>
+
+      <small class="login-note">הגישה נשמרת עד לסגירת לשונית הדפדפן או להתנתקות.</small>
+    </div>
+  </section>
+
+  <div class="app-shell" id="appShell" aria-hidden="true">
     <header class="topbar">
       <a class="brand" href="#" aria-label="האתר של ארבעת הציידים">
         <span class="brand-mark">4H</span>
@@ -28,6 +59,7 @@
       </div>
 
       <div class="topbar-actions">
+        <button class="logout-button" id="logoutButton">התנתקות</button>
         <button class="icon-button" id="methodButton" aria-label="מתודולוגיה">?</button>
         <button class="icon-button" id="themeButton" aria-label="החלפת תצוגה">◐</button>
       </div>
@@ -303,6 +335,6 @@
     <p class="dialog-warning">אין להשתמש בציון לבדו לפתיחת עסקה. יש להגדיר מראש נקודת ביטול תזה, גודל פוזיציה וסיכון מרבי. המערכת אינה מבצעת פעולות מסחר.</p>
   </dialog>
 
-  <script src="app.js?v=1.1"></script>
+  <script src="app.js?v=1.2"></script>
 </body>
 </html>

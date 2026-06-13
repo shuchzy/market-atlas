@@ -38,6 +38,115 @@ body {
 button, input { font: inherit; }
 button { color: inherit; }
 
+.auth-locked { overflow: hidden; }
+.auth-locked .app-shell { visibility: hidden; pointer-events: none; }
+
+.login-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background:
+    linear-gradient(rgba(3, 10, 8, 0.76), rgba(3, 10, 8, 0.92)),
+    radial-gradient(circle at 50% 15%, rgba(94, 224, 160, 0.14), transparent 34%),
+    var(--bg);
+  transition: opacity 260ms ease, visibility 260ms ease;
+}
+
+.login-gate.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+.login-card {
+  width: min(420px, 100%);
+  padding: 34px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(94, 224, 160, 0.25);
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(15, 33, 28, 0.98), rgba(7, 18, 15, 0.98));
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.5);
+}
+
+.login-card::before {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  top: -100px;
+  left: -70px;
+  border-radius: 50%;
+  background: rgba(94, 224, 160, 0.08);
+  filter: blur(2px);
+}
+
+.login-emblem {
+  width: 54px;
+  height: 54px;
+  margin-bottom: 22px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(94, 224, 160, 0.55);
+  color: var(--green-bright);
+  background: rgba(94, 224, 160, 0.08);
+  font: 600 15px "IBM Plex Mono", monospace;
+  clip-path: polygon(18% 0, 100% 0, 100% 82%, 82% 100%, 0 100%, 0 18%);
+}
+
+.login-card h1 { margin: 7px 0 4px; font-size: 28px; }
+.login-card > p { margin: 0 0 24px; color: var(--muted); font-size: 13px; }
+.login-form { display: flex; flex-direction: column; gap: 15px; }
+.login-form label > span { display: block; margin-bottom: 6px; color: #b9ccc4; font-size: 11px; }
+.login-form input {
+  width: 100%;
+  height: 46px;
+  padding: 0 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  outline: 0;
+  color: var(--text);
+  direction: ltr;
+  background: rgba(0, 0, 0, 0.17);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.login-form input:focus {
+  border-color: rgba(94, 224, 160, 0.65);
+  box-shadow: 0 0 0 3px rgba(94, 224, 160, 0.08);
+}
+
+.password-field { position: relative; }
+.password-field input { padding-left: 62px; }
+.password-field button {
+  position: absolute;
+  left: 7px;
+  top: 7px;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+}
+
+.login-error { min-height: 18px; margin: -4px 0 0 !important; color: var(--red) !important; font-size: 11px !important; }
+.login-submit {
+  height: 50px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(94, 224, 160, 0.55);
+  border-radius: 11px;
+  color: #062116;
+  background: linear-gradient(125deg, #8df7bd, #55d99b);
+  font-weight: 800;
+  cursor: pointer;
+}
+.login-submit b { font-size: 20px; }
+.login-note { display: block; margin-top: 20px; color: #62776e; font-size: 9px; line-height: 1.5; }
+
 .noise {
   position: fixed;
   inset: 0;
@@ -107,6 +216,17 @@ button { color: inherit; }
 
 .divider { width: 1px; height: 14px; background: var(--line-strong); margin: 0 4px; }
 .topbar-actions { justify-self: end; display: flex; gap: 8px; }
+.logout-button {
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 107, 120, 0.23);
+  border-radius: 9px;
+  color: #d99aa0;
+  background: rgba(255, 107, 120, 0.045);
+  font-size: 10px;
+  cursor: pointer;
+}
+.logout-button:hover { color: var(--red); border-color: rgba(255, 107, 120, 0.45); }
 
 .icon-button, .mini-button {
   border: 1px solid var(--line);
@@ -573,8 +693,12 @@ body.light-mode .chart-loader { background: rgba(244, 249, 246, 0.9); }
 }
 
 @media (max-width: 620px) {
+  .login-card { padding: 27px 22px; }
+  .login-card h1 { font-size: 24px; }
   .topbar { height: 62px; padding: 0 14px; }
   .brand small { display: none; }
+  .logout-button { width: 34px; padding: 0; overflow: hidden; color: transparent; }
+  .logout-button::after { content: "↪"; display: block; color: #d99aa0; font-size: 15px; }
   .dashboard { padding: 8px; }
   .control-strip { grid-template-columns: 1fr; gap: 14px; }
   .timeframes { width: 100%; }

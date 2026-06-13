@@ -1,5 +1,9 @@
 "use strict";
 
+const AUTH_SESSION_KEY = "four-hunters-authenticated";
+const AUTH_SALT = "four-hunters:v1";
+const AUTH_DIGEST = "87723c14070be517acc60bc34dc8179216138f994a66511c0825b29282d9d9b0";
+
 const ASSETS = [
   { symbol: "BTCUSDT", code: "BTC", name: "Bitcoin", icon: "₿", color: "#f3ba2f", seed: 64000 },
   { symbol: "ETHUSDT", code: "ETH", name: "Ethereum", icon: "Ξ", color: "#8797f5", seed: 3400 },
@@ -47,6 +51,14 @@ const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
 const refs = {
+  loginGate: $("#loginGate"),
+  loginForm: $("#loginForm"),
+  loginUsername: $("#loginUsername"),
+  loginPassword: $("#loginPassword"),
+  loginError: $("#loginError"),
+  togglePassword: $("#togglePassword"),
+  logoutButton: $("#logoutButton"),
+  appShell: $("#appShell"),
   assetList: $("#assetList"),
   assetSearch: $("#assetSearch"),
   selectedIcon: $("#selectedIcon"),
@@ -64,6 +76,81 @@ const refs = {
   assetCount: $("#assetCount"),
   dialog: $("#infoDialog")
 };
+
+let appInitialized = false;
+
+async function sha256(value) {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function hasActiveSession() {
+  try {
+    return sessionStorage.getItem(AUTH_SESSION_KEY) === "true";
+  } catch (error) {
+    return false;
+  }
+}
+
+function setActiveSession(active) {
+  try {
+    if (active) sessionStorage.setItem(AUTH_SESSION_KEY, "true");
+    else sessionStorage.removeItem(AUTH_SESSION_KEY);
+  } catch (error) {
+    // The login still works for the current page when storage is unavailable.
+  }
+}
+
+async function unlockApplication() {
+  document.body.classList.remove("auth-locked");
+  refs.loginGate.classList.add("hidden");
+  refs.loginGate.setAttribute("aria-hidden", "true");
+  refs.appShell.setAttribute("aria-hidden", "false");
+  if (!appInitialized) {
+    appInitialized = true;
+    await init();
+  }
+}
+
+function lockApplication() {
+  setActiveSession(false);
+  window.location.reload();
+}
+
+function bindAuthentication() {
+  refs.togglePassword.addEventListener("click", () => {
+    const revealing = refs.loginPassword.type === "password";
+    refs.loginPassword.type = revealing ? "text" : "password";
+    refs.togglePassword.textContent = revealing ? "הסתר" : "הצג";
+    refs.togglePassword.setAttribute("aria-label", revealing ? "הסתרת סיסמה" : "הצגת סיסמה");
+  });
+
+  refs.loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    refs.loginError.textContent = "";
+    const username = refs.loginUsername.value.trim().toLowerCase();
+    const password = refs.loginPassword.value;
+
+    if (!username || !password) {
+      refs.loginError.textContent = "יש להזין שם משתמש וסיסמה.";
+      return;
+    }
+
+    const digest = await sha256(`${AUTH_SALT}:${username}:${password}`);
+    if (digest !== AUTH_DIGEST) {
+      refs.loginError.textContent = "שם המשתמש או הסיסמה אינם נכונים.";
+      refs.loginPassword.value = "";
+      refs.loginPassword.focus();
+      return;
+    }
+
+    setActiveSession(true);
+    await unlockApplication();
+  });
+
+  refs.logoutButton.addEventListener("click", lockApplication);
+}
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -1071,4 +1158,13 @@ async function init() {
   await Promise.all([runAnalysis(), fetchAssetTickers()]);
 }
 
-init();
+async function bootstrap() {
+  bindAuthentication();
+  if (hasActiveSession()) {
+    await unlockApplication();
+  } else {
+    refs.loginUsername.focus();
+  }
+}
+
+bootstrap();
