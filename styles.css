@@ -421,6 +421,22 @@ button { color: inherit; }
 .panel-head h2 { margin: 4px 0 0; font-size: 17px; }
 .chart-actions { display: flex; direction: ltr; gap: 5px; }
 .mini-button { min-width: 42px; height: 28px; border-radius: 7px; color: var(--muted); font: 600 9px "IBM Plex Mono", monospace; }
+.export-analysis-button {
+  height: 28px;
+  padding: 0 9px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(94, 224, 160, 0.4);
+  border-radius: 7px;
+  color: var(--green-bright);
+  background: rgba(94, 224, 160, 0.08);
+  font-size: 9px;
+  cursor: pointer;
+}
+.export-analysis-button b { font: 600 8px "IBM Plex Mono", monospace; }
+.export-analysis-button:hover { background: rgba(94, 224, 160, 0.15); }
+.export-analysis-button.exporting { opacity: 0.6; pointer-events: none; }
 
 .chart-legend { display: flex; gap: 18px; margin: 14px 0 8px; color: var(--muted); font-size: 10px; direction: ltr; }
 .chart-legend span { display: flex; align-items: center; gap: 5px; }
@@ -549,6 +565,36 @@ button { color: inherit; }
 .metric-card div strong { margin-top: 3px; font-size: 14px; }
 .metric-card small { max-width: 80px; color: var(--muted); font: 500 9px "IBM Plex Mono", monospace; text-align: left; direction: ltr; }
 
+.outlook-panel { padding: 17px; }
+.outlook-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding-top: 13px; }
+.outlook-card {
+  padding: 13px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.018);
+}
+.outlook-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--outlook-color); }
+.outlook-head { display: flex; align-items: center; justify-content: space-between; }
+.outlook-head span { color: var(--muted); font: 600 9px "IBM Plex Mono", monospace; }
+.outlook-head strong { color: var(--outlook-color); font-size: 12px; }
+.outlook-probabilities { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 11px; direction: ltr; }
+.outlook-probabilities div { padding: 7px 4px; border-radius: 7px; text-align: center; background: rgba(0, 0, 0, 0.12); }
+.outlook-probabilities span, .outlook-probabilities b { display: block; }
+.outlook-probabilities span { color: var(--muted); font-size: 8px; }
+.outlook-probabilities b { margin-top: 2px; font: 600 11px "IBM Plex Mono", monospace; }
+.outlook-probabilities .bull b { color: var(--green); }
+.outlook-probabilities .flat b { color: var(--amber); }
+.outlook-probabilities .bear b { color: var(--red); }
+.outlook-range { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; }
+.outlook-range span { color: var(--muted); font-size: 9px; }
+.outlook-range strong { font: 600 10px "IBM Plex Mono", monospace; direction: ltr; }
+.outlook-card p { min-height: 32px; margin: 9px 0 0; color: #aec0b9; font-size: 10px; line-height: 1.45; }
+.outlook-explainer { margin-top: 10px; padding: 10px 12px; display: flex; gap: 10px; border-right: 2px solid var(--cyan); background: rgba(95, 216, 213, 0.035); }
+.outlook-explainer span { flex: 0 0 auto; color: var(--cyan); font-size: 10px; font-weight: 700; }
+.outlook-explainer p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+
 .decision-grid { display: grid; grid-template-columns: 1fr 1.08fr 1fr; gap: 12px; }
 .decision-card { padding: 17px; min-width: 0; }
 .card-footnote { margin: 12px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
@@ -642,6 +688,26 @@ dialog p { color: #afc1ba; line-height: 1.6; }
 .method-grid span { margin-top: 4px; color: var(--muted); font-size: 10px; }
 .dialog-warning { padding: 12px; border-right: 3px solid var(--amber); background: rgba(244, 198, 107, 0.05); font-size: 12px; }
 
+.export-dialog { width: min(1220px, calc(100vw - 30px)); max-width: none; padding: 18px; }
+.export-dialog-head { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 13px; }
+.export-dialog-head h2 { margin: 4px 0 0; }
+.export-dialog .export-close { position: static; flex: 0 0 auto; }
+.export-preview-wrap { max-height: calc(100vh - 210px); overflow: auto; border: 1px solid var(--line); border-radius: 12px; background: #06100d; }
+.export-preview-wrap img { display: block; width: 100%; height: auto; }
+.export-dialog-actions { padding: 13px 3px 0; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.export-dialog-actions p { margin: 0; font-size: 10px; }
+.download-export {
+  min-width: 130px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: #062116;
+  background: linear-gradient(125deg, #8df7bd, #55d99b);
+  text-decoration: none;
+  font-weight: 800;
+}
+
 body.light-mode {
   --bg: #e8efeb;
   --bg-soft: #f4f8f6;
@@ -675,6 +741,7 @@ body.light-mode .chart-loader { background: rgba(244, 249, 246, 0.9); }
   .analysis-grid article:last-child { grid-column: 1 / -1; }
   .decision-grid { grid-template-columns: 1fr 1fr; }
   .decision-grid article:last-child { grid-column: 1 / -1; }
+  .outlook-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 900px) {
@@ -705,6 +772,8 @@ body.light-mode .chart-loader { background: rgba(244, 249, 246, 0.9); }
   .timeframes button { flex: 1; }
   .chart-wrap { height: 340px; }
   .chart-legend { gap: 8px; flex-wrap: wrap; }
+  .chart-actions { flex-wrap: wrap; justify-content: flex-start; }
+  .export-analysis-button { width: 100%; justify-content: center; }
   .chart-footer { grid-template-columns: 1fr 1fr; gap: 10px; }
   .chart-footer div:nth-child(3) { border: 0; }
   .probability-card { display: flex; }
@@ -714,4 +783,6 @@ body.light-mode .chart-loader { background: rgba(244, 249, 246, 0.9); }
   .footer { flex-wrap: wrap; }
   .footer button { width: 100%; margin: 0; text-align: right; }
   .method-grid { grid-template-columns: 1fr 1fr; }
+  .export-dialog-actions { align-items: stretch; flex-direction: column; }
+  .download-export { width: 100%; }
 }

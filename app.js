@@ -41,6 +41,7 @@ const state = {
   candles: [],
   analysis: null,
   timeframeAnalyses: {},
+  futureOutlooks: [],
   tickers: {},
   layers: { fib: true, ob: true, fvg: true, ema: true },
   source: "live",
@@ -59,6 +60,10 @@ const refs = {
   togglePassword: $("#togglePassword"),
   logoutButton: $("#logoutButton"),
   appShell: $("#appShell"),
+  exportAnalysis: $("#exportAnalysis"),
+  exportDialog: $("#exportDialog"),
+  exportPreview: $("#exportPreview"),
+  downloadExport: $("#downloadExport"),
   assetList: $("#assetList"),
   assetSearch: $("#assetSearch"),
   selectedIcon: $("#selectedIcon"),
@@ -78,6 +83,7 @@ const refs = {
 };
 
 let appInitialized = false;
+let exportObjectUrl = null;
 
 async function sha256(value) {
   const bytes = new TextEncoder().encode(value);
@@ -488,6 +494,74 @@ function calculateScenarioProbabilities(combined, trendScore, alignment, atrPerc
   return { bullish, bearish, neutral, confidence };
 }
 
+function buildFutureOutlooks() {
+  const a = state.analysis;
+  const price = state.candles.at(-1).close;
+  const configs = [
+    {
+      id: "24h",
+      label: "24 שעות",
+      weights: { "15m": 0.25, "1h": 0.4, "4h": 0.25, "1d": 0.1 },
+      volatilityFactor: 1.35,
+      description: "תגובה קצרה לנזילות ולמומנטום התוך־יומי."
+    },
+    {
+      id: "7d",
+      label: "7 ימים",
+      weights: { "15m": 0.05, "1h": 0.2, "4h": 0.4, "1d": 0.35 },
+      volatilityFactor: 3.1,
+      description: "תרחיש סווינג שמשלב מבנה, Wyckoff ואזורי עניין."
+    },
+    {
+      id: "30d",
+      label: "30 ימים",
+      weights: { "15m": 0, "1h": 0.1, "4h": 0.3, "1d": 0.6 },
+      volatilityFactor: 6.2,
+      description: "כיוון מאקרו יחסי; אי־הוודאות גבוהה יותר באופק זה."
+    }
+  ];
+
+  return configs.map((config) => {
+    const score = Object.entries(config.weights).reduce(
+      (sum, [interval, weight]) => sum + state.timeframeAnalyses[interval].combined * weight,
+      0
+    );
+    const trendScore = Object.entries(config.weights).reduce(
+      (sum, [interval, weight]) => sum + state.timeframeAnalyses[interval].trendScore * weight,
+      0
+    );
+    const alignment = Object.entries(config.weights).reduce(
+      (sum, [interval, weight]) => sum + Math.abs(state.timeframeAnalyses[interval].combined) * weight,
+      0
+    );
+    const probabilities = calculateScenarioProbabilities(score, trendScore, alignment, a.atrPercent);
+    const movePercent = clamp(a.atrPercent * config.volatilityFactor, a.atrPercent * 0.8, 28);
+    const dominant = [
+      { key: "bull", label: "עולה", value: probabilities.bullish, color: "#5ee0a0" },
+      { key: "flat", label: "דשדוש", value: probabilities.neutral, color: "#f4c66b" },
+      { key: "bear", label: "יורד", value: probabilities.bearish, color: "#ff6b78" }
+    ].sort((x, y) => y.value - x.value)[0];
+    const bullishTarget = price * (1 + movePercent / 100);
+    const bearishTarget = price * (1 - movePercent / 100);
+    const flatBand = price * Math.max(a.atrPercent * config.volatilityFactor * 0.3, 0.4) / 100;
+
+    return {
+      ...config,
+      score,
+      trendScore,
+      alignment,
+      ...probabilities,
+      dominant,
+      movePercent,
+      currentPrice: price,
+      bullishTarget,
+      bearishTarget,
+      flatLow: price - flatBand,
+      flatHigh: price + flatBand
+    };
+  });
+}
+
 function analyzeMarket(candles) {
   const closes = candles.map((c) => c.close);
   const ema20 = ema(closes, 20);
@@ -651,6 +725,7 @@ async function runAnalysis() {
     ),
     { mtfScore, blendedScore }
   );
+  state.futureOutlooks = buildFutureOutlooks();
   updateDashboard();
   setLoading(false);
 }
@@ -681,6 +756,7 @@ function updateDashboard() {
   updateOrderBlocks();
   updateFibonacci();
   updateWyckoff();
+  updateOutlookPanel();
   updateDecisionCenter();
   drawChart();
 }
@@ -794,6 +870,31 @@ function updateWyckoff() {
       </div>
     `;
   }).join("");
+}
+
+function updateOutlookPanel() {
+  const strongest = [...state.futureOutlooks].sort((a, b) => b.dominant.value - a.dominant.value)[0];
+  $("#outlookBias").textContent = strongest
+    ? `${strongest.dominant.label} ${strongest.dominant.value}% · ${strongest.label}`
+    : "--";
+  $("#outlookGrid").innerHTML = state.futureOutlooks.map((outlook) => `
+    <article class="outlook-card" style="--outlook-color:${outlook.dominant.color}">
+      <div class="outlook-head">
+        <span>${outlook.label}</span>
+        <strong>${outlook.dominant.label} ${outlook.dominant.value}%</strong>
+      </div>
+      <div class="outlook-probabilities">
+        <div class="bull"><span>עולה</span><b>${outlook.bullish}%</b></div>
+        <div class="flat"><span>דשדוש</span><b>${outlook.neutral}%</b></div>
+        <div class="bear"><span>יורד</span><b>${outlook.bearish}%</b></div>
+      </div>
+      <div class="outlook-range">
+        <span>טווח תרחיש</span>
+        <strong>${formatPrice(outlook.bearishTarget)} – ${formatPrice(outlook.bullishTarget)}</strong>
+      </div>
+      <p>${outlook.description} תנועה משוערת: ±${outlook.movePercent.toFixed(1)}%.</p>
+    </article>
+  `).join("");
 }
 
 function updateDecisionCenter() {
@@ -1112,9 +1213,374 @@ function handleChartMove(event) {
   `;
 }
 
+function canvasRoundRect(ctx, x, y, width, height, radius) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + width, y, x + width, y + height, r);
+  ctx.arcTo(x + width, y + height, x, y + height, r);
+  ctx.arcTo(x, y + height, x, y, r);
+  ctx.arcTo(x, y, x + width, y, r);
+  ctx.closePath();
+}
+
+function canvasPill(ctx, text, x, y, background, color, align = "left") {
+  ctx.save();
+  ctx.font = '600 18px "Arial"';
+  const width = ctx.measureText(text).width + 28;
+  const left = align === "right" ? x - width : x;
+  canvasRoundRect(ctx, left, y, width, 34, 17);
+  ctx.fillStyle = background;
+  ctx.fill();
+  ctx.fillStyle = color;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, left + width / 2, y + 17);
+  ctx.restore();
+}
+
+function canvasWrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 3) {
+  const words = text.split(/\s+/);
+  const lines = [];
+  let line = "";
+  words.forEach((word) => {
+    const candidate = line ? `${line} ${word}` : word;
+    if (ctx.measureText(candidate).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = candidate;
+    }
+  });
+  if (line) lines.push(line);
+  lines.slice(0, maxLines).forEach((item, index) => ctx.fillText(item, x, y + index * lineHeight));
+}
+
+function scenarioReason(outlook, type) {
+  const a = state.analysis;
+  if (type === "bull") {
+    const factors = [];
+    if (a.momentumScore > 0) factors.push("מומנטום חיובי");
+    if (a.ictScore > 0) factors.push("תמיכת ICT");
+    if (outlook.trendScore > 0) factors.push("יישור מגמה");
+    return factors.join(" · ") || "נדרש אישור פריצה";
+  }
+  if (type === "bear") {
+    const factors = [];
+    if (a.trendScore < 0) factors.push("מבנה ארוך שלילי");
+    if (a.ictScore < 0) factors.push("נזילות דובית");
+    if (a.rangePosition > 0.65) factors.push("אזור Premium");
+    return factors.join(" · ") || "נדרש כשל תמיכה";
+  }
+  return a.adx.value < 20 ? "ADX נמוך · שוק ללא מגמה" : "איזון בין אותות סותרים";
+}
+
+function drawExportPath(ctx, points, color, dashed = false) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 4;
+  ctx.setLineDash(dashed ? [11, 9] : []);
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 10;
+  ctx.beginPath();
+  points.forEach((point, index) => {
+    if (index === 0) ctx.moveTo(point.x, point.y);
+    else {
+      const previous = points[index - 1];
+      const controlX = (previous.x + point.x) / 2;
+      ctx.bezierCurveTo(controlX, previous.y, controlX, point.y, point.x, point.y);
+    }
+  });
+  ctx.stroke();
+  ctx.setLineDash([]);
+  points.slice(1).forEach((point) => {
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, 6, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
+async function exportAnalysisImage() {
+  if (!state.analysis || !state.candles.length || !state.futureOutlooks.length) return;
+  refs.exportAnalysis.classList.add("exporting");
+  const originalText = refs.exportAnalysis.querySelector("span").textContent;
+  refs.exportAnalysis.querySelector("span").textContent = "מייצר תמונה...";
+
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1800;
+    canvas.height = 1180;
+    const ctx = canvas.getContext("2d");
+    const a = state.analysis;
+    const candles = state.candles.slice(-130);
+    const current = candles.at(-1).close;
+    const outlooks = state.futureOutlooks;
+
+    const background = ctx.createLinearGradient(0, 0, 1800, 1180);
+    background.addColorStop(0, "#07110f");
+    background.addColorStop(0.55, "#0b1b17");
+    background.addColorStop(1, "#071310");
+    ctx.fillStyle = background;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "rgba(94,224,160,0.045)";
+    ctx.beginPath();
+    ctx.arc(1500, 80, 330, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.direction = "rtl";
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#edf7f2";
+    ctx.font = '700 42px "Arial"';
+    ctx.fillText("מפת העתיד של ארבעת הציידים", 1730, 65);
+    ctx.fillStyle = "#829b91";
+    ctx.font = '500 18px "Arial"';
+    ctx.fillText(`${state.asset.name} · ${state.asset.code}/USDT · טווח גרף ${state.interval.toUpperCase()}`, 1730, 100);
+    ctx.direction = "ltr";
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#5ee0a0";
+    ctx.font = '600 18px "Arial"';
+    ctx.fillText(`GENERATED ${new Date().toLocaleString("en-GB")}`, 70, 70);
+    ctx.fillStyle = "#829b91";
+    ctx.fillText(`LIVE SOURCE: ${state.source === "live" ? "BINANCE" : "SIMULATION"}`, 70, 100);
+
+    const plot = { x: 70, y: 150, width: 1320, height: 660 };
+    const futureWidth = 450;
+    const historyWidth = plot.width - futureWidth;
+    const volumeHeight = 105;
+    const priceHeight = plot.height - volumeHeight;
+    const allFuturePrices = outlooks.flatMap((outlook) => [
+      outlook.bullishTarget,
+      outlook.bearishTarget,
+      outlook.flatHigh,
+      outlook.flatLow
+    ]);
+    const zones = [...a.orderBlocks, ...a.fvgs];
+    let priceMin = Math.min(...candles.map((c) => c.low), ...allFuturePrices, ...zones.map((zone) => zone.low));
+    let priceMax = Math.max(...candles.map((c) => c.high), ...allFuturePrices, ...zones.map((zone) => zone.high));
+    const pricePadding = (priceMax - priceMin) * 0.1;
+    priceMin -= pricePadding;
+    priceMax += pricePadding;
+    const priceY = (price) => plot.y + (priceMax - price) / Math.max(priceMax - priceMin, 0.000001) * priceHeight;
+    const historyX = (index) => plot.x + index / Math.max(candles.length - 1, 1) * historyWidth;
+
+    canvasRoundRect(ctx, plot.x, plot.y, plot.width, plot.height, 18);
+    ctx.fillStyle = "rgba(4,13,11,0.68)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(140,184,168,0.18)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    const futureGradient = ctx.createLinearGradient(plot.x + historyWidth, 0, plot.x + plot.width, 0);
+    futureGradient.addColorStop(0, "rgba(95,216,213,0.025)");
+    futureGradient.addColorStop(1, "rgba(95,216,213,0.09)");
+    ctx.fillStyle = futureGradient;
+    ctx.fillRect(plot.x + historyWidth, plot.y, futureWidth, priceHeight);
+    ctx.fillStyle = "#5fd8d5";
+    ctx.font = '600 15px "Arial"';
+    ctx.textAlign = "center";
+    ctx.fillText("מרחב תרחישים עתידי", plot.x + historyWidth + futureWidth / 2, plot.y + 28);
+
+    for (let i = 0; i <= 6; i += 1) {
+      const y = plot.y + i / 6 * priceHeight;
+      const price = priceMax - i / 6 * (priceMax - priceMin);
+      ctx.strokeStyle = "rgba(140,184,168,0.11)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(plot.x, y);
+      ctx.lineTo(plot.x + plot.width, y);
+      ctx.stroke();
+      ctx.fillStyle = "#829b91";
+      ctx.font = '500 14px "Arial"';
+      ctx.textAlign = "right";
+      ctx.fillText(formatPrice(price), plot.x + plot.width - 10, y - 10);
+    }
+
+    const keyLevels = [
+      { price: a.rangeHigh, label: "Range High", color: "rgba(255,107,120,0.55)" },
+      { price: a.rangeLow, label: "Range Low", color: "rgba(94,224,160,0.55)" },
+      { price: a.vwap.at(-1), label: "VWAP", color: "rgba(95,216,213,0.48)" },
+      { price: a.nearestFib.price, label: `Fib ${(a.nearestFib.ratio * 100).toFixed(1)}%`, color: "rgba(244,198,107,0.58)" }
+    ];
+    keyLevels.forEach((level) => {
+      const y = priceY(level.price);
+      ctx.strokeStyle = level.color;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([7, 6]);
+      ctx.beginPath();
+      ctx.moveTo(plot.x, y);
+      ctx.lineTo(plot.x + plot.width, y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = level.color;
+      ctx.font = '600 13px "Arial"';
+      ctx.textAlign = "left";
+      ctx.fillText(`${level.label} ${formatPrice(level.price)}`, plot.x + 10, y - 9);
+    });
+
+    zones.slice(0, 5).forEach((zone) => {
+      const top = priceY(zone.high);
+      const bottom = priceY(zone.low);
+      const isBull = zone.type === "bull";
+      const isFvg = !("strength" in zone);
+      ctx.fillStyle = isFvg
+        ? "rgba(95,216,213,0.08)"
+        : isBull ? "rgba(94,224,160,0.09)" : "rgba(255,107,120,0.09)";
+      ctx.strokeStyle = isFvg
+        ? "rgba(95,216,213,0.38)"
+        : isBull ? "rgba(94,224,160,0.4)" : "rgba(255,107,120,0.4)";
+      ctx.fillRect(plot.x + historyWidth * 0.64, top, plot.width - historyWidth * 0.64, Math.max(4, bottom - top));
+      ctx.strokeRect(plot.x + historyWidth * 0.64, top, plot.width - historyWidth * 0.64, Math.max(4, bottom - top));
+    });
+
+    const maxVolume = Math.max(...candles.map((c) => c.volume));
+    const candleSpace = historyWidth / candles.length;
+    const candleWidth = Math.max(2, Math.min(6, candleSpace * 0.58));
+    candles.forEach((candle, index) => {
+      const x = historyX(index);
+      const up = candle.close >= candle.open;
+      const color = up ? "#5ee0a0" : "#ff6b78";
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, priceY(candle.high));
+      ctx.lineTo(x, priceY(candle.low));
+      ctx.stroke();
+      const top = priceY(Math.max(candle.open, candle.close));
+      const bottom = priceY(Math.min(candle.open, candle.close));
+      ctx.fillRect(x - candleWidth / 2, top, candleWidth, Math.max(2, bottom - top));
+
+      const volumeTop = plot.y + priceHeight + volumeHeight - candle.volume / maxVolume * (volumeHeight - 18);
+      ctx.globalAlpha = 0.42;
+      ctx.fillRect(x - candleWidth / 2, volumeTop, candleWidth, plot.y + plot.height - volumeTop);
+      ctx.globalAlpha = 1;
+    });
+
+    ctx.strokeStyle = "rgba(140,184,168,0.32)";
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.moveTo(plot.x + historyWidth, plot.y);
+    ctx.lineTo(plot.x + historyWidth, plot.y + plot.height);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    const futureXs = [
+      plot.x + historyWidth + futureWidth * 0.22,
+      plot.x + historyWidth + futureWidth * 0.56,
+      plot.x + historyWidth + futureWidth * 0.88
+    ];
+    const startPoint = { x: plot.x + historyWidth, y: priceY(current) };
+    const bullPoints = [startPoint, ...outlooks.map((outlook, index) => ({ x: futureXs[index], y: priceY(outlook.bullishTarget) }))];
+    const flatPoints = [startPoint, ...outlooks.map((outlook, index) => ({ x: futureXs[index], y: priceY((outlook.flatLow + outlook.flatHigh) / 2) }))];
+    const bearPoints = [startPoint, ...outlooks.map((outlook, index) => ({ x: futureXs[index], y: priceY(outlook.bearishTarget) }))];
+    drawExportPath(ctx, bullPoints, "#5ee0a0");
+    drawExportPath(ctx, flatPoints, "#f4c66b", true);
+    drawExportPath(ctx, bearPoints, "#ff6b78");
+
+    outlooks.forEach((outlook, index) => {
+      const x = futureXs[index];
+      ctx.fillStyle = "#829b91";
+      ctx.font = '600 14px "Arial"';
+      ctx.textAlign = "center";
+      ctx.fillText(outlook.label, x, plot.y + priceHeight - 15);
+      canvasPill(ctx, `↑ ${outlook.bullish}%`, x - 12, priceY(outlook.bullishTarget) - 45, "rgba(94,224,160,0.16)", "#96ffc7", "right");
+      canvasPill(ctx, `→ ${outlook.neutral}%`, x + 12, priceY((outlook.flatLow + outlook.flatHigh) / 2) - 17, "rgba(244,198,107,0.16)", "#f4c66b");
+      canvasPill(ctx, `↓ ${outlook.bearish}%`, x - 12, priceY(outlook.bearishTarget) + 12, "rgba(255,107,120,0.16)", "#ff8e98", "right");
+    });
+
+    ctx.strokeStyle = "#edf7f2";
+    ctx.setLineDash([7, 5]);
+    ctx.beginPath();
+    ctx.moveTo(plot.x + historyWidth - 20, priceY(current));
+    ctx.lineTo(plot.x + plot.width, priceY(current));
+    ctx.stroke();
+    ctx.setLineDash([]);
+    canvasPill(ctx, `NOW ${formatPrice(current)}`, plot.x + historyWidth - 10, priceY(current) - 17, "#edf7f2", "#07110f", "right");
+
+    const summaryY = 845;
+    const columnWidth = 535;
+    const cards = [
+      {
+        x: 70,
+        title: "תרחיש עולה",
+        color: "#5ee0a0",
+        probability: outlooks[1].bullish,
+        target: formatPrice(outlooks[1].bullishTarget),
+        reason: scenarioReason(outlooks[1], "bull")
+      },
+      {
+        x: 632,
+        title: "תרחיש דשדוש",
+        color: "#f4c66b",
+        probability: outlooks[1].neutral,
+        target: `${formatPrice(outlooks[1].flatLow)} – ${formatPrice(outlooks[1].flatHigh)}`,
+        reason: scenarioReason(outlooks[1], "flat")
+      },
+      {
+        x: 1194,
+        title: "תרחיש יורד",
+        color: "#ff6b78",
+        probability: outlooks[1].bearish,
+        target: formatPrice(outlooks[1].bearishTarget),
+        reason: scenarioReason(outlooks[1], "bear")
+      }
+    ];
+    cards.forEach((card) => {
+      canvasRoundRect(ctx, card.x, summaryY, columnWidth, 170, 16);
+      ctx.fillStyle = "rgba(13,28,24,0.9)";
+      ctx.fill();
+      ctx.strokeStyle = `${card.color}55`;
+      ctx.stroke();
+      ctx.direction = "rtl";
+      ctx.textAlign = "right";
+      ctx.fillStyle = card.color;
+      ctx.font = '700 24px "Arial"';
+      ctx.fillText(`${card.title} · ${card.probability}%`, card.x + columnWidth - 22, summaryY + 40);
+      ctx.fillStyle = "#edf7f2";
+      ctx.font = '600 20px "Arial"';
+      ctx.fillText(`יעד 7 ימים: ${card.target}`, card.x + columnWidth - 22, summaryY + 78);
+      ctx.fillStyle = "#9eb2aa";
+      ctx.font = '500 17px "Arial"';
+      canvasWrapText(ctx, card.reason, card.x + columnWidth - 22, summaryY + 113, columnWidth - 44, 25, 2);
+    });
+
+    const footerY = 1045;
+    ctx.direction = "rtl";
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#edf7f2";
+    ctx.font = '700 18px "Arial"';
+    ctx.fillText(`ביטול תזה: ${$("#invalidationLevel").textContent} · ADX ${a.adx.value.toFixed(1)} · RSI ${a.rsiValue.toFixed(1)} · Wyckoff ${a.wyckoff.phase}`, 1730, footerY);
+    ctx.fillStyle = "#71877e";
+    ctx.font = '500 14px "Arial"';
+    ctx.fillText("התרחישים הם ניתוח הסתברותי המבוסס על נתוני עבר ואינם תחזית ודאית או הוראת מסחר.", 1730, footerY + 35);
+    ctx.direction = "ltr";
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#5ee0a0";
+    ctx.font = '600 16px "Arial"';
+    ctx.fillText("FOUR HUNTERS · MARKET ATLAS", 70, footerY + 18);
+
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png", 0.96));
+    if (!blob) throw new Error("Could not create export");
+    if (exportObjectUrl) URL.revokeObjectURL(exportObjectUrl);
+    exportObjectUrl = URL.createObjectURL(blob);
+    const timestamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
+    refs.exportPreview.src = exportObjectUrl;
+    refs.downloadExport.href = exportObjectUrl;
+    refs.downloadExport.download = `four-hunters-${state.asset.code}-${state.interval}-${timestamp}.png`;
+    refs.exportDialog.showModal();
+  } finally {
+    refs.exportAnalysis.classList.remove("exporting");
+    refs.exportAnalysis.querySelector("span").textContent = originalText;
+  }
+}
+
 function bindEvents() {
   refs.assetSearch.addEventListener("input", (event) => renderAssetList(event.target.value));
   refs.launch.addEventListener("click", runAnalysis);
+  refs.exportAnalysis.addEventListener("click", exportAnalysisImage);
   refs.chart.addEventListener("mousemove", handleChartMove);
   refs.chart.addEventListener("mouseleave", () => { refs.tooltip.style.display = "none"; });
 
@@ -1143,8 +1609,12 @@ function bindEvents() {
   $("#methodButton").addEventListener("click", () => refs.dialog.showModal());
   $("#disclaimerButton").addEventListener("click", () => refs.dialog.showModal());
   $("#dialogClose").addEventListener("click", () => refs.dialog.close());
+  $("#exportDialogClose").addEventListener("click", () => refs.exportDialog.close());
   refs.dialog.addEventListener("click", (event) => {
     if (event.target === refs.dialog) refs.dialog.close();
+  });
+  refs.exportDialog.addEventListener("click", (event) => {
+    if (event.target === refs.exportDialog) refs.exportDialog.close();
   });
 
   const observer = new ResizeObserver(() => drawChart());
